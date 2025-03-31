@@ -1,30 +1,46 @@
-import React from 'react';
-import { SafeAreaView, Button, StyleSheet, Text, View } from 'react-native';
-import axios from 'axios';
+import React from 'react'
+import { SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import axios from 'axios'
 import TextButton from '../app/components/TextButton'
 
 const App = () => {
-  const [responseMessage, setResponseMessage] = React.useState('');
+  const [responseMessage, setResponseMessage] = React.useState('')
 
-  // Funkcja do wysyłania zapytania POST na endpoint /win+d
   const handleWinD = async () => {
     try {
-      const response = await axios.post('http://192.168.100.47:5000/desktop');  // Użyj IP serwera Flask
-      setResponseMessage(response.data.message);
+      const response = await axios.post('http://192.168.100.47:5000/desktop')
+      setResponseMessage(response.data.message)
     } catch (error) {
-      setResponseMessage('Error: ' + error);
+      setResponseMessage('Error: ' + error)
     }
-  };
+  }
 
-  // Funkcja do wysyłania zapytania POST na endpoint /mute
   const handleMute = async () => {
     try {
-      const response = await axios.post('http://192.168.100.47:5000/mute');  // Użyj IP serwera Flask
-      setResponseMessage(response.data.message);
+      const response = await axios.post('http://192.168.100.47:5000/mute')
+      setResponseMessage(response.data.message)
     } catch (error) {
-      setResponseMessage('Error : ' + error);
+      setResponseMessage('Error : ' + error)
     }
-  };
+  }
+
+  const clip = async () => {
+    try {
+      const response = await axios.post('http://192.168.100.47:5000/clip')
+      setResponseMessage(response.data.message)
+    } catch (error) {
+      setResponseMessage('Error: ' + error)
+    }
+  }
+
+  const getApps = async () => {
+    try {
+      const response = await axios.get('http://192.168.100.47:5000/getApps')
+      setResponseMessage(response.data.message)
+    } catch (error) {
+      setResponseMessage('Error: ' + error)
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,8 +53,8 @@ const App = () => {
           <TextButton text={"toggle mute"} click={() => { handleMute() }} bgColor={"purple"} />
         </View>
         <View style={styles.buttonRow}>
-          <Button title="Minimize All Windows" onPress={handleWinD} />
-          <Button title="Toggle Mute" onPress={handleMute} />
+          <TextButton text={"klip"} click={() => { clip() }} bgColor={"black"} />
+          <TextButton text={"get apps"} click={() => { getApps() }} bgColor={"black"} />
         </View>
       </View>
       {responseMessage ? <Text style={styles.response}>{responseMessage}</Text> : null}
