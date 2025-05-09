@@ -8,7 +8,7 @@ const TextButton = ({ text, click, bgColor, textColor = "white" }) => {
             flex: 1,
             padding: 10,
             borderRadius: 15,
-            justifyContent: "center",
+            justifyContent: "center", // to tez
             alignItems: "center",
             margin: 10,
             backgroundColor: bgColor
