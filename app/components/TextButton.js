@@ -1,8 +1,9 @@
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import {createTextButtonStyles} from "../../assets/styles/textButton"
 
 const TextButton = ({ text, click, bgColor, textColor = "white" }) => {
 
-    const styles = StyleSheet.create({
+    /*const styles = StyleSheet.create({
         button: {
             display: "flex",
             flex: 1,
@@ -17,7 +18,9 @@ const TextButton = ({ text, click, bgColor, textColor = "white" }) => {
             textAlign: "center",
             color: textColor
         }
-    })
+    })*/
+
+    styles = createTextButtonStyles(bgColor, textColor)
 
     return (
         <TouchableOpacity style={styles.button} onPress={click ? () => { click() } : () => { }}>

@@ -1,7 +1,7 @@
 import { TouchableOpacity, Image, StyleSheet } from 'react-native'
 
 const PhotoButton = ({ click, imagePath }) => {
-    styles = StyleSheet.create({
+    /*styles = StyleSheet.create({
         button: {
             display: "flex",
             flex: 1,
@@ -16,7 +16,7 @@ const PhotoButton = ({ click, imagePath }) => {
             width: "auto",
             flexWrap: "nowrap"
         }
-    })
+    })*/
 
     return (
         <TouchableOpacity onPress={click ? () => { click() } : () => { }} style={styles.button}>

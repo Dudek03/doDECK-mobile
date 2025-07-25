@@ -4,6 +4,8 @@ import axios from 'axios'
 import TextButton from '../app/components/TextButton'
 import VolumeControl from '../app/components/VolumeControl'
 
+const SERWERIP = '192.168.1.36'
+
 const App = () => {
   const [responseMessage, setResponseMessage] = React.useState('')
   const [isAudioChanging, setIsAudioChanging] = React.useState(false)
@@ -11,7 +13,7 @@ const App = () => {
 
   const handleWinD = async () => {
     try {
-      const response = await axios.post('http://192.168.100.47:5000/system/handleDesktop')
+      const response = await axios.get(`http://${SERWERIP}:5000/system/handleDesktop`)
       setResponseMessage(response.data.message)
     } catch (error) {
       setResponseMessage('Error: ' + error)
@@ -20,7 +22,7 @@ const App = () => {
 
   const handleMute = async () => {
     try {
-      const response = await axios.post('http://192.168.100.47:5000/discord/muteDiscord')
+      const response = await axios.post(`http://${SERWERIP}:5000/discord/muteDiscord`)
       setResponseMessage(response.data.message)
     } catch (error) {
       setResponseMessage('Error : ' + error)
@@ -29,7 +31,7 @@ const App = () => {
 
   const clip = async () => {
     try {
-      const response = await axios.post('http://192.168.100.47:5000/system/handleClip')
+      const response = await axios.post(`http://${SERWERIP}:5000/system/handleClip`)
       setResponseMessage(response.data.message)
     } catch (error) {
       setResponseMessage('Error: ' + error)
@@ -38,7 +40,7 @@ const App = () => {
 
   const getApps = async () => {
     try {
-      const response = await axios.get('http://192.168.100.47:5000/audio/getAppsVolume')
+      const response = await axios.get(`http://${SERWERIP}:5000/audio/getAppsVolume`)
       setAppsAudio(response.data)
     } catch (error) {
       setResponseMessage('Error: ' + error)

@@ -1,8 +1,9 @@
 import { StyleSheet, ImageBackground, Text, TouchableOpacity } from "react-native";
+import { createMixedButtonStyles } from "../../assets/styles/mixedButton";
 
 const MixedButton = ({ text, click, bgColor, imagePath, textColor = "white" }) => {
 
-    const styles = StyleSheet.create({
+    /*const styles = StyleSheet.create({
         button: {
             display: "flex",
             flex: 1,
@@ -17,7 +18,9 @@ const MixedButton = ({ text, click, bgColor, imagePath, textColor = "white" }) =
             textAlign: "center",
             color: textColor
         }
-    })
+    })*/
+
+    styles = createMixedButtonStyles(bgColor, textColor)
 
     return (
         <TouchableOpacity style={styles.button} onPress={click ? () => { click() } : () => { }}>

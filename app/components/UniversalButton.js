@@ -1,8 +1,9 @@
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import {createUniversalButtonStyles} from '../../assets/styles/universalButton'
 
 const UniversalButton = ({ text, click, color, textColor = "white", width, height, font, insertInside }) => {
 
-    const styles = StyleSheet.create({
+    /*const styles = StyleSheet.create({
         button: {
             display: "flex",
             backgroundColor: color,
@@ -12,7 +13,9 @@ const UniversalButton = ({ text, click, color, textColor = "white", width, heigh
             borderRadius: 100,
             alignItems: "center"
         }
-    })
+    })*/
+
+    styles = createUniversalButtonStyles(color)
 
     if (insertInside)
         return (

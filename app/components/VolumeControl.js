@@ -3,6 +3,7 @@ import {useEffect, useState } from "react";
 import TextButton from "./TextButton";
 import { appendBaseUrl } from "expo-router/build/fork/getPathFromState-forks";
 import Slider from '@react-native-community/slider';
+import '../../assets/styles/volumeControl'
 
 const VolumeControl = ({appsVolume, closeFunction}) => {
 
