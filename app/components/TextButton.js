@@ -20,7 +20,7 @@ const TextButton = ({ text, click, bgColor, textColor = "white" }) => {
         }
     })*/
 
-    styles = createTextButtonStyles(bgColor, textColor)
+    let styles = createTextButtonStyles(bgColor, textColor)
 
     return (
         <TouchableOpacity style={styles.button} onPress={click ? () => { click() } : () => { }}>

@@ -1,9 +1,8 @@
 import { StyleSheet, Text, ScrollView, View } from "react-native";
 import {useEffect, useState } from "react";
 import TextButton from "./TextButton";
-import { appendBaseUrl } from "expo-router/build/fork/getPathFromState-forks";
 import Slider from '@react-native-community/slider';
-import '../../assets/styles/volumeControl'
+import styles from '../../assets/styles/volumeControl'
 
 const VolumeControl = ({appsVolume, closeFunction}) => {
 
@@ -21,25 +20,6 @@ const VolumeControl = ({appsVolume, closeFunction}) => {
             )
         )
     }
-
-    const styles = StyleSheet.create({
-        button: {
-            display: "flex",
-            flex: 1, 
-            padding: 10, 
-            borderRadius: 15, 
-            justifyContent: "center", 
-            alignItems: "center",
-            margin: 10,
-            backgroundColor: "blue"
-        },
-        overlay: {
-            display: "flex",
-            flex: 1,
-            flexDirection: "column",
-            backgroundColor: "pink",
-        }
-    })
 
     return (
         <ScrollView style={styles.overlay}> 

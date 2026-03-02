@@ -1,108 +1,193 @@
-import React from 'react'
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
 import axios from 'axios'
-import TextButton from '../app/components/TextButton'
-import VolumeControl from '../app/components/VolumeControl'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import VolumeControl from './components/VolumeControl'
+import { useRouter } from "expo-router";
 
-const SERWERIP = '192.168.1.36'
-
-const App = () => {
-  const [responseMessage, setResponseMessage] = React.useState('')
-  const [isAudioChanging, setIsAudioChanging] = React.useState(false)
-  const [appsAudio, setAppsAudio] = React.useState({})
-
-  const handleWinD = async () => {
-    try {
-      const response = await axios.get(`http://${SERWERIP}:5000/system/handleDesktop`)
-      setResponseMessage(response.data.message)
-    } catch (error) {
-      setResponseMessage('Error: ' + error)
+const INITIAL_BUTTONS = [
+    {
+        id: '1',
+        title: 'Pulpit',
+        color: '#1a1a1a',
+        type: 'ACTION',
+        payload: { command: 'hotkey', args: 'win+d' }
+    },
+    {
+        id: '2',
+        title: 'Mute Discord',
+        color: '#5865F2',
+        type: 'ACTION',
+        payload: { command: 'mute_app', args: 'Discord.exe' }
+    },
+    {
+        id: '3',
+        title: 'Zrób Klip',
+        color: '#e74c3c',
+        type: 'ACTION',
+        payload: { command: 'hotkey', args: 'alt+8' }
+    },
+    {
+        id: '4',
+        title: 'Mixer Audio',
+        color: '#2ecc71',
+        type: 'WIDGET',
+        payload: { command: 'open_mixer' }
     }
-  }
+]
 
-  const handleMute = async () => {
-    try {
-      const response = await axios.post(`http://${SERWERIP}:5000/discord/muteDiscord`)
-      setResponseMessage(response.data.message)
-    } catch (error) {
-      setResponseMessage('Error : ' + error)
+
+const MainScreen = () => {
+    const router = useRouter();
+    const [buttons, setButtons] = useState(INITIAL_BUTTONS)
+    const [responseMessage, setResponseMessage] = useState('')
+    const [isAudioChanging, setIsAudioChanging] = useState(false)
+    const [appsAudio, setAppsAudio] = useState({})
+    const [serverIP, setServerIP] = useState('')
+
+
+    const BASE_URL = `http://${serverIP}:5000`
+
+    useEffect(() => {
+        const appInit = async () => {
+            let currIp = '0'
+            try {
+                const savedIp = await AsyncStorage.getItem('serverIP');
+                if (savedIp) {
+                    setServerIP(savedIp);
+                    currIp = savedIp
+                }
+            } catch (error) {
+                console.log('Błąd przy wczytywaniu IP:', error);
+            }
+
+            try {
+                const res = await axios.get(`http://${currIp}:5000/get_layout`);
+                if (res.data && res.data.length > 0) {
+                    setButtons(res.data);
+                }
+            } catch (e) {
+                console.error("Nie udało się pobrać układu przycisków", e);
+            }
+        }
+        appInit()
+    }, []);
+
+
+    const handleButtonPress = async (item) => {
+        if (item.type === 'WIDGET' && item.payload.command === 'open_mixer') {
+            try {
+                const response = await axios.get(`${BASE_URL}/audio/getAppsVolume`)
+                setAppsAudio(response.data)
+                setIsAudioChanging(true)
+            } catch (error) {
+                setResponseMessage('Błąd pobierania audio: ' + error.message)
+            }
+            return
+        }
+
+        try {
+            const response = await axios.post(`${BASE_URL}/trigger`, {
+                command: item.payload.command,
+                args: item.payload.args || ''
+            })
+
+            setResponseMessage(response.data.msg || 'Wykonano')
+            setTimeout(() => setResponseMessage(''), 3000)
+        } catch (error) {
+            setResponseMessage('Błąd połączenia: ' + error.message)
+        }
     }
-  }
 
-  const clip = async () => {
-    try {
-      const response = await axios.post(`http://${SERWERIP}:5000/system/handleClip`)
-      setResponseMessage(response.data.message)
-    } catch (error) {
-      setResponseMessage('Error: ' + error)
-    }
-  }
+    const renderItem = ({ item }) => (
+        <TouchableOpacity
+            style={[styles.gridItem, { backgroundColor: item.color }]}
+            onPress={() => handleButtonPress(item)}
+            activeOpacity={0.7}
+        >
+            <Text style={styles.gridItemText}>{item.title}</Text>
+        </TouchableOpacity>
+    )
 
-  const getApps = async () => {
-    try {
-      const response = await axios.get(`http://${SERWERIP}:5000/audio/getAppsVolume`)
-      setAppsAudio(response.data)
-    } catch (error) {
-      setResponseMessage('Error: ' + error)
-    }
-  }
+    return (
+        <SafeAreaView style={styles.container}>
+            {isAudioChanging ? (
+                <VolumeControl appsVolume={appsAudio} closeFunction={() => setIsAudioChanging(false)} />
+            ) : (
+                <>
+                    <View style={styles.header}>
+                        <Text style={styles.headerTitle}>DO(DECK)</Text>
+                    </View>
 
-  return (
-    <SafeAreaView style={styles.container}>
-        {isAudioChanging ? (<VolumeControl appsVolume={appsAudio} closeFunction={()=>{setIsAudioChanging(false)}}></VolumeControl>): (
-            <>
-          <View style={styles.clock}>
+                    <FlatList
+                        data={buttons}
+                        renderItem={renderItem}
+                        keyExtractor={item => item.id}
+                        numColumns={2}
+                        contentContainerStyle={styles.gridContainer}
+                    />
 
-          </View>
-          <View style={styles.buttons}>
-            <View style={styles.buttonRow}>
-              <TextButton text={"handle win+D"} click={() => { handleWinD() }} bgColor={"black"} />
-              <TextButton text={"toggle mute"} click={() => { handleMute() }} bgColor={"purple"} />
-            </View>
-            <View style={styles.buttonRow}>
-              <TextButton text={"klip"} click={() => { clip() }} bgColor={"black"} />
-              <TextButton text={"get apps"} click={() => { getApps(); setIsAudioChanging(true) }} bgColor={"black"} />
-            </View>
-          </View>
-          <Text style={styles.response}>{responseMessage}</Text>
-          </>
-        )}
-    </SafeAreaView>
-  );
-};
+                    <View style={styles.footer}>
+                        <Text style={styles.response}>{responseMessage}</Text>
+                    </View>
+                </>
+            )}
+        </SafeAreaView>
+    )
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "column",
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 16,
-  },
-  response: {
-    marginTop: 20,
-    fontSize: 16,
-    color: 'green',
-  },
-  clock: {
-    backgroundColor: "purple",
-    flex: 1
-  },
-  buttons: {
-    flexDirection: "column",
-    flex: 1
-  },
-  buttonRow: {
-    flexDirection: "row",
-    flex: 1,
-    justifyContent: "space-evenly",
-    backgroundColor: "red",
-    width: '100%'
-  }
-});
+    container: {
+        flex: 1,
+        backgroundColor: '#121212', // Nowoczesny, bardzo ciemny szary
+    },
+    header: {
+        height: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#333',
+        marginBottom: 10,
+    },
+    headerTitle: {
+        color: '#fff',
+        fontSize: 24,
+        fontWeight: 'bold',
+        letterSpacing: 2,
+    },
+    gridContainer: {
+        paddingHorizontal: 10,
+    },
+    gridItem: {
+        flex: 1,
+        margin: 8,
+        height: 120, // Kwadratowe kafelki
+        borderRadius: 15, // Zaokrąglone rogi wyglądają lepiej na mobile
+        justifyContent: 'center',
+        alignItems: 'center',
+        // Cienie dla iOS
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        // Cienie dla Androida
+        elevation: 8,
+    },
+    gridItemText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    footer: {
+        height: 60,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    response: {
+        color: '#aaa',
+        fontSize: 14,
+    }
+})
 
-export default App;
-
+export default MainScreen

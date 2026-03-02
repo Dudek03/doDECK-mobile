@@ -3,23 +3,6 @@ import { createMixedButtonStyles } from "../../assets/styles/mixedButton";
 
 const MixedButton = ({ text, click, bgColor, imagePath, textColor = "white" }) => {
 
-    /*const styles = StyleSheet.create({
-        button: {
-            display: "flex",
-            flex: 1,
-            padding: 10,
-            forderRadius: 15,
-            justifyContent: "center",
-            alignItems: "center",
-            margin: 10,
-            backgroundColor: bgColor
-        },
-        text: {
-            textAlign: "center",
-            color: textColor
-        }
-    })*/
-
     styles = createMixedButtonStyles(bgColor, textColor)
 
     return (
