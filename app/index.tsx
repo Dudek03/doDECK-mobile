@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
 import VolumeControl from './components/VolumeControl'
 import { useRouter } from "expo-router";
@@ -57,6 +58,39 @@ const MainScreen = () => {
 
 
     useEffect(() => {
+        const appInit = async () => {
+            let currIp = '192.168.100.47'
+            setServerIP(currIp)
+            /*
+            try {
+                const savedIp = await AsyncStorage.getItem('serverIP');
+                if (savedIp) {
+                    setServerIP(savedIp);
+                    currIp = savedIp
+                }
+                else {
+                    await AsyncStorage.setItem('serverIP', currIp)
+                    setServerIP(currIp)
+                }
+            } catch (error) {
+                console.log('Błąd przy wczytywaniu IP:', error);
+            }
+            */
+
+            try {
+                const res = await axios.get(`http://${currIp}:5000/dispatcher/get_layout`);
+                if (res.data && res.data.length > 0) {
+                    setButtons(res.data);
+                }
+            } catch (e) {
+                console.error("Nie udało się pobrać układu przycisków", e);
+            }
+        }
+        appInit()
+    }, []);
+
+
+    useEffect(() => {
         let isLiveData = buttons.some(btn => btn.type == "LIVE ACTION")
         if (!isLiveData || !serverIP) return
 
@@ -72,31 +106,6 @@ const MainScreen = () => {
         }, 3000)
     }, [serverIP, buttons])
 
-    useEffect(() => {
-        const appInit = async () => {
-            let currIp = '0'
-            try {
-                const savedIp = await AsyncStorage.getItem('serverIP');
-                if (savedIp) {
-                    setServerIP(savedIp);
-                    currIp = savedIp
-                }
-            } catch (error) {
-                console.log('Błąd przy wczytywaniu IP:', error);
-            }
-
-            try {
-                const res = await axios.get(`http://${currIp}:5000/get_layout`);
-                if (res.data && res.data.length > 0) {
-                    setButtons(res.data);
-                }
-            } catch (e) {
-                console.error("Nie udało się pobrać układu przycisków", e);
-            }
-        }
-        appInit()
-    }, []);
-
 
     const handleButtonPress = async (item) => {
         if (item.type === 'WIDGET' && item.payload.command === 'open_mixer') {
@@ -111,7 +120,7 @@ const MainScreen = () => {
         }
 
         try {
-            const response = await axios.post(`${BASE_URL}/trigger`, {
+            const response = await axios.post(`${BASE_URL}/dispatcher/trigger`, {
                 command: item.payload.command,
                 args: item.payload.args || ''
             })
@@ -144,6 +153,17 @@ const MainScreen = () => {
         </View>
     );
 
+    const WidgetTile = ({ item, onPress }) => (
+        <TouchableOpacity
+            style={[styles.gridItem, { backgroundColor: item.color }]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+
+            <Text style={styles.gridItemText}>{item.title}</Text>
+        </TouchableOpacity>
+    );
+
     const renderItem = ({ item }) => {
         if (item.type === 'ACTION') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
@@ -164,7 +184,9 @@ const MainScreen = () => {
             }
         }
 
-        if (item.type === 'WIDGET') { }
+        if (item.type === 'WIDGET') {
+            return <WidgetTile item={item} onPress={() => handleButtonPress(item)} />;
+        }
     }
 
     return (
