@@ -38,7 +38,7 @@ const INITIAL_BUTTONS = [
         id: '5',
         title: 'cpu usage',
         color: '#5865F2',
-        type: 'LIVE ACTION',
+        type: 'LIVE DATA',
         payload: { sensor: 'cpu' }
     },
 ]
@@ -91,21 +91,32 @@ const MainScreen = () => {
 
 
     useEffect(() => {
-        let isLiveData = buttons.some(btn => btn.type == "LIVE ACTION")
+        let isLiveData = buttons.some(btn => btn.type == "LIVE DATA")
         if (!isLiveData || !serverIP) return
 
         const RESTInterval = setInterval(async () => {
             try {
-                const res = await axios.get(`http://${BASE_URL}:5000/system/getLiveData`);
-                if (res.data && res.data.length > 0) {
+                const res = await axios.get(`${BASE_URL}/system/getSystemUsage`);
+                if (res.data && res.data != undefined) {
                     setHardwareData(res.data)
                 }
             } catch (e) {
                 console.error("nie udalo sie pobrac danych", e);
             }
         }, 3000)
+        return () => clearInterval(RESTInterval);
     }, [serverIP, buttons])
 
+    const setAppVolume = async (name, newVolume) => {
+        try {
+            await axios.post(`${BASE_URL}/audio/setAppVolume`, {
+                app: name,
+                volume: newVolume
+            })
+        } catch (error) {
+            console.error('Błąd zmiany głośności dla', name, error)
+        }
+    }
 
     const handleButtonPress = async (item) => {
         if (item.type === 'WIDGET' && item.payload.command === 'open_mixer') {
@@ -119,17 +130,20 @@ const MainScreen = () => {
             return
         }
 
-        try {
-            const response = await axios.post(`${BASE_URL}/dispatcher/trigger`, {
-                command: item.payload.command,
-                args: item.payload.args || ''
-            })
+        else if (item.type === 'ACTION') {
+            try {
+                const response = await axios.post(`${BASE_URL}/dispatcher/trigger`, {
+                    command: item.payload.command,
+                    args: item.payload.args || ''
+                })
 
-            setResponseMessage(response.data.msg || 'Wykonano')
-            setTimeout(() => setResponseMessage(''), 3000)
-        } catch (error) {
-            setResponseMessage('Błąd połączenia: ' + error.message)
+                setResponseMessage(response.data.msg || 'Wykonano')
+                setTimeout(() => setResponseMessage(''), 3000)
+            } catch (error) {
+                setResponseMessage('Błąd połączenia: ' + error.message)
+            }
         }
+
     }
 
     const ActionTile = ({ item, onPress }) => (
@@ -169,7 +183,7 @@ const MainScreen = () => {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         }
 
-        if (item.type === 'LIVE_DATA') {
+        if (item.type === 'LIVE DATA') {
             const sensor = item.payload.sensor;
 
             switch (sensor) {
@@ -185,14 +199,21 @@ const MainScreen = () => {
         }
 
         if (item.type === 'WIDGET') {
-            return <WidgetTile item={item} onPress={() => handleButtonPress(item)} />;
+            return <WidgetTile
+                item={item}
+                onPress={() => handleButtonPress(item)}
+            />;
         }
     }
 
     return (
         <SafeAreaView style={styles.container}>
             {isAudioChanging ? (
-                <VolumeControl appsVolume={appsAudio} closeFunction={() => setIsAudioChanging(false)} />
+                <VolumeControl
+                    appsVolume={appsAudio}
+                    closeFunction={() => setIsAudioChanging(false)}
+                    onVolumeConfirm={(appName, newVolume) => setAppVolume(appName, newVolume)}
+                />
             ) : (
                 <>
                     <View style={styles.header}>
@@ -222,7 +243,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#121212',
     },
     header: {
-        height: 80,
+        height: 40,
         justifyContent: 'center',
         alignItems: 'center',
         borderBottomWidth: 1,
