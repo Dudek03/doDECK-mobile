@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { SafeAreaView, StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
 import VolumeControl from './components/VolumeControl'
 import { useRouter } from "expo-router";
+import ActionTile from './components/ActionTile'
+import ValueTile from './components/ValueTile'
+import WidgetTile from './components/WidgetTile'
 
 const INITIAL_BUTTONS = [
     {
@@ -146,38 +150,6 @@ const MainScreen = () => {
 
     }
 
-    const ActionTile = ({ item, onPress }) => (
-        <TouchableOpacity style={[styles.gridItem, { backgroundColor: item.color }]} onPress={onPress}>
-            <Text style={styles.gridItemText}>{item.title}</Text>
-        </TouchableOpacity>
-    );
-
-    const SystemTile = ({ item, value }) => (
-        <View style={[styles.gridItem, { backgroundColor: item.color }]}>
-            <Text style={styles.gridItemText}>{item.title}</Text>
-            <Text style={styles.largeValueText}>{value}%</Text>
-        </View>
-    );
-
-    const YouTubeTile = ({ item, subs }) => (
-        <View style={[styles.gridItem, { backgroundColor: item.color }]}>
-            <Icon name="youtube" size={30} color="white" />
-            <Text style={styles.gridItemText}>Widzowie</Text>
-            <Text style={styles.largeValueText}>{subs > 0 ? subs : "..."}</Text>
-        </View>
-    );
-
-    const WidgetTile = ({ item, onPress }) => (
-        <TouchableOpacity
-            style={[styles.gridItem, { backgroundColor: item.color }]}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-
-            <Text style={styles.gridItemText}>{item.title}</Text>
-        </TouchableOpacity>
-    );
-
     const renderItem = ({ item }) => {
         if (item.type === 'ACTION') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
@@ -188,9 +160,9 @@ const MainScreen = () => {
 
             switch (sensor) {
                 case 'cpu':
-                    return <SystemTile item={item} value={hardwareData.cpu} />;
+                    return <ValueTile item={item} value={hardwareData.cpu} />;
                 case 'ram':
-                    return <SystemTile item={item} value={hardwareData.ram} />;
+                    return <ValueTile item={item} value={hardwareData.ram} />;
                 /* case 'youtube_subs':
                        return <YouTubeTile item={item} subs={systemStats.youtube_subs} />; */
                 default:
