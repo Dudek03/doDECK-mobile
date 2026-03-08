@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
 import VolumeControl from './components/VolumeControl'
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import ActionTile from './components/ActionTile'
 import ValueTile from './components/ValueTile'
 import WidgetTile from './components/WidgetTile'
@@ -61,55 +61,57 @@ const MainScreen = () => {
     const BASE_URL = `http://${serverIP}:5000`
 
 
-    useEffect(() => {
-        const appInit = async () => {
-            let currIp = '192.168.100.47'
-            setServerIP(currIp)
-            /*
-            try {
-                const savedIp = await AsyncStorage.getItem('serverIP');
-                if (savedIp) {
-                    setServerIP(savedIp);
-                    currIp = savedIp
-                }
-                else {
-                    await AsyncStorage.setItem('serverIP', currIp)
-                    setServerIP(currIp)
-                }
-            } catch (error) {
-                console.log('Błąd przy wczytywaniu IP:', error);
-            }
-            */
+    useFocusEffect(
+        useCallback(() => {
+            const checkAndLoadIp = async () => {
+                try {
+                    const savedIp = await AsyncStorage.getItem('serverIP');
 
-            try {
-                const res = await axios.get(`http://${currIp}:5000/dispatcher/get_layout`);
-                if (res.data && res.data.length > 0) {
-                    setButtons(res.data);
+                    if (savedIp && savedIp !== serverIP) {
+                        setServerIP(savedIp);
+
+                        fetchLayoutFromPython(savedIp);
+                    }
+                } catch (error) {
+                    console.log('Błąd przy wczytywaniu IP z SecureStore:', error);
                 }
-            } catch (e) {
-                console.error("Nie udało się pobrać układu przycisków", e);
+            };
+
+            checkAndLoadIp();
+
+        }, [serverIP])
+    );
+
+    const fetchLayoutFromPython = async (ip) => {
+        try {
+            const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`);
+            if (res.data && res.data.length > 0) {
+                setButtons(res.data);
             }
+        } catch (e) {
+            console.error("Nie udało się pobrać układu przycisków", e);
         }
-        appInit()
-    }, []);
+    }
 
+    useFocusEffect(
+        useCallback(() => {
+            let isLiveData = buttons.some(btn => btn.type == "LIVE DATA")
+            if (!isLiveData || !serverIP) return
 
-    useEffect(() => {
-        let isLiveData = buttons.some(btn => btn.type == "LIVE DATA")
-        if (!isLiveData || !serverIP) return
-
-        const RESTInterval = setInterval(async () => {
-            try {
-                const res = await axios.get(`${BASE_URL}/system/getSystemUsage`);
-                if (res.data && res.data != undefined) {
-                    setHardwareData(res.data)
+            const RESTInterval = setInterval(async () => {
+                try {
+                    const res = await axios.get(`${BASE_URL}/system/getSystemUsage`);
+                    if (res.data && res.data != undefined) {
+                        setHardwareData(res.data)
+                    }
+                } catch (e) {
+                    console.error("nie udalo sie pobrac danych", e);
                 }
-            } catch (e) {
-                console.error("nie udalo sie pobrac danych", e);
-            }
-        }, 3000)
-        return () => clearInterval(RESTInterval);
-    }, [serverIP, buttons])
+            }, 3000)
+
+            return () => clearInterval(RESTInterval);
+        }, [serverIP, buttons])
+    )
 
     const setAppVolume = async (name, newVolume) => {
         try {
@@ -190,6 +192,12 @@ const MainScreen = () => {
                 <>
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>DO(DECK)</Text>
+                        <TouchableOpacity
+                            style={styles.settingsButton}
+                            onPress={() => router.push('/SettingsScreen')}
+                        >
+                            <Text style={styles.settingsButtonText}>Ustawienia</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <FlatList
@@ -215,12 +223,18 @@ const styles = StyleSheet.create({
         backgroundColor: '#121212',
     },
     header: {
-        height: 40,
-        justifyContent: 'center',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
+        marginTop: 40,
+        marginBottom: 20,
+        paddingBottom: 10,
         borderBottomWidth: 1,
-        borderBottomColor: '#333',
-        marginBottom: 10,
+        borderBottomColor: '#eee',
+    },
+    settingsButtonText: {
+        color: '#fff',
+        fontWeight: '600',
     },
     headerTitle: {
         color: '#fff',
@@ -245,6 +259,12 @@ const styles = StyleSheet.create({
         shadowRadius: 4.65,
         // Cienie dla Androida
         elevation: 8,
+    },
+    settingsButton: {
+        backgroundColor: '#007BFF',
+        paddingVertical: 8,
+        paddingHorizontal: 15,
+        borderRadius: 8,
     },
     gridItemText: {
         color: 'white',
