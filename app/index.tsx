@@ -11,45 +11,105 @@ import WidgetTile from './components/WidgetTile'
 
 const INITIAL_BUTTONS = [
     {
-        id: '1',
-        title: 'Pulpit',
-        color: '#1a1a1a',
-        type: 'ACTION',
-        payload: { command: 'hotkey', args: 'win+d' }
+        "id": "1",
+        "title": "pulpit",
+        "color": "#1a1a1a",
+        "type": "ACTION",
+        "x": 1,
+        "y": 1,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "hotkey", "args": "win+d" }
     },
     {
-        id: '2',
-        title: 'Mute Discord',
-        color: '#5865F2',
-        type: 'ACTION',
-        payload: { command: 'mute_app', args: 'Discord.exe' }
+        "id": "2",
+        "title": "task-manager",
+        "color": "#1a1a1a",
+        "type": "ACTION",
+        "x": 2,
+        "y": 1,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "hotkey", "args": "ctrl+shift+esc" }
     },
     {
-        id: '3',
-        title: 'Zrób Klip',
-        color: '#e74c3c',
-        type: 'ACTION',
-        payload: { command: 'hotkey', args: 'alt+8' }
+        "id": "5",
+        "title": "pliki",
+        "color": "#1a1a1a",
+        "type": "ACTION",
+        "x": 3,
+        "y": 1,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "hotkey", "args": "win+e" }
     },
     {
-        id: '4',
-        title: 'Mixer Audio',
-        color: '#2ecc71',
-        type: 'WIDGET',
-        payload: { command: 'open_mixer' }
+        "id": "6",
+        "title": "onet",
+        "color": "#1a1a1a",
+        "type": "ACTION",
+        "x": 4,
+        "y": 1,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "open_url", "args": "https://www.onet.pl/" }
     },
     {
-        id: '5',
-        title: 'cpu usage',
-        color: '#5865F2',
-        type: 'LIVE DATA',
-        payload: { sensor: 'cpu' }
+        "id": "3",
+        "title": "Mixer Audio",
+        "color": "#2ecc71",
+        "type": "WIDGET",
+        "x": 1,
+        "y": 2,
+        "w": 2,
+        "h": 1,
+        "payload": { "command": "open_mixer" }
     },
+    {
+        "id": "4",
+        "title": "ram usage",
+        "color": "#5865F2",
+        "type": "LIVE DATA",
+        "x": 1,
+        "y": 3,
+        "w": 2,
+        "h": 2,
+        "payload": { "sensor": "ram" }
+    },
+    {
+        "id": "7",
+        "title": "prev",
+        "color": "#2ecc71",
+        "type": "ACTION",
+        "x": 3,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "hotkey", "args": "left arrow" }
+    },
+    {
+        "id": "8",
+        "title": "next",
+        "color": "#2ecc71",
+        "type": "ACTION",
+        "x": 4,
+        "y": 3,
+        "w": 1,
+        "h": 1,
+        "payload": { "command": "hotkey", "args": "right arrow" }
+    }
 ]
 
 
 const MainScreen = () => {
+    //to change
+    //const layoutData = res.data;
+    //const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id);
+    //const columns = activeProfile.grid.columns;
+    //const currentButtons = activeProfile.buttons;
+
     const router = useRouter();
+    const [activeProfile, setActiteProfile] = useState()
     const [buttons, setButtons] = useState(INITIAL_BUTTONS)
     const [responseMessage, setResponseMessage] = useState('')
     const [isAudioChanging, setIsAudioChanging] = useState(false)
@@ -165,8 +225,6 @@ const MainScreen = () => {
                     return <ValueTile item={item} value={hardwareData.cpu} />;
                 case 'ram':
                     return <ValueTile item={item} value={hardwareData.ram} />;
-                /* case 'youtube_subs':
-                       return <YouTubeTile item={item} subs={systemStats.youtube_subs} />; */
                 default:
                     return <View style={styles.gridItem}><Text>Brak danych</Text></View>;
             }
@@ -200,13 +258,30 @@ const MainScreen = () => {
                         </TouchableOpacity>
                     </View>
 
-                    <FlatList
-                        data={buttons}
-                        renderItem={renderItem}
-                        keyExtractor={item => item.id}
-                        numColumns={2}
-                        contentContainerStyle={styles.gridContainer}
-                    />
+                    <View style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: 10,
+                        padding: 10,
+                        flex: 1,
+                    }}>
+                        {buttons.map((item) => {
+                            const gridPosition = {
+                                gridColumnStart: item.x,
+                                gridColumnEnd: item.x + item.w,
+                                gridRowStart: item.y,
+                                gridRowEnd: item.y + item.h,
+                            };
+
+                            return (
+                                <View key={item.id} style={gridPosition}>
+
+                                    {renderItem(item)}
+
+                                </View>
+                            );
+                        })}
+                    </View>
 
                     <View style={styles.footer}>
                         <Text style={styles.response}>{responseMessage}</Text>
