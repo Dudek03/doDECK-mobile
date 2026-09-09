@@ -1,0 +1,39 @@
+name: Build Frontend (Android APK)
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pobranie kodu
+        uses: actions/checkout@v4
+
+      - name: Instalacja środowiska Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalacja środowiska Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalacja paczek NPM
+        run: npm install
+
+      - name: Generowanie natywnego kodu (Expo Prebuild)
+        run: npx expo prebuild --platform android --clean
+
+      - name: Kompilacja pliku APK
+        working-directory: ./android
+        run: ./gradlew assembleRelease
+
+      - name: Udostępnienie pliku APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: dodeck-app-apk
+          path: android/app/build/outputs/apk/release/app-release.apk

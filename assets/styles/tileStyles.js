@@ -3,8 +3,8 @@ import { StyleSheet } from "react-native";
 export const tileStyles = StyleSheet.create({
   gridItem: {
     flex: 1,
-    margin: 8,
-    height: 120,
+    width: "100%",
+    height: "100%",
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",

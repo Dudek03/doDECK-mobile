@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
@@ -8,118 +8,125 @@ import { useFocusEffect, useRouter } from "expo-router";
 import ActionTile from './components/ActionTile'
 import ValueTile from './components/ValueTile'
 import WidgetTile from './components/WidgetTile'
+import { mainStyles } from '../assets/styles/main'
 
-const INITIAL_BUTTONS = [
-    {
-        "id": "1",
-        "title": "pulpit",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 1,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "win+d" }
-    },
-    {
-        "id": "2",
-        "title": "task-manager",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 2,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "ctrl+shift+esc" }
-    },
-    {
-        "id": "5",
-        "title": "pliki",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 3,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "win+e" }
-    },
-    {
-        "id": "6",
-        "title": "onet",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 4,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "open_url", "args": "https://www.onet.pl/" }
-    },
-    {
-        "id": "3",
-        "title": "Mixer Audio",
-        "color": "#2ecc71",
-        "type": "WIDGET",
-        "x": 1,
-        "y": 2,
-        "w": 2,
-        "h": 1,
-        "payload": { "command": "open_mixer" }
-    },
-    {
-        "id": "4",
-        "title": "ram usage",
-        "color": "#5865F2",
-        "type": "LIVE DATA",
-        "x": 1,
-        "y": 3,
-        "w": 2,
-        "h": 2,
-        "payload": { "sensor": "ram" }
-    },
-    {
-        "id": "7",
-        "title": "prev",
-        "color": "#2ecc71",
-        "type": "ACTION",
-        "x": 3,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "left arrow" }
-    },
-    {
-        "id": "8",
-        "title": "next",
-        "color": "#2ecc71",
-        "type": "ACTION",
-        "x": 4,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "right arrow" }
-    }
-]
+const INITIAL_LAYOUT = {
+    "active_layout_id": "profile_main",
+    "layouts": [
+        {
+            "id": "profile_main",
+            "name": "Główny Panel",
+            "grid": { "columns": 4, "rows": 4 },
+            "buttons": [
+                {
+                    "id": "1",
+                    "title": "pulpit",
+                    "color": "#1a1a1a",
+                    "type": "ACTION",
+                    "x": 1, "y": 1, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "hotkey",
+                        "args": "win+d"
+                    }
+                },
 
+                {
+                    "id": "2",
+                    "title": "task-manager",
+                    "color": "#1a1a1a",
+                    "type": "ACTION",
+                    "x": 2, "y": 1, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "hotkey",
+                        "args": "ctrl+shift+esc"
+                    }
+                },
+
+                {
+                    "id": "5",
+                    "title": "pliki",
+                    "color": "#1a1a1a",
+                    "type": "ACTION",
+                    "x": 3, "y": 1, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "hotkey",
+                        "args": "win+e"
+                    }
+                },
+
+                {
+                    "id": "6",
+                    "title": "onet",
+                    "color": "#1a1a1a",
+                    "type": "ACTION",
+                    "x": 4, "y": 1, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "open_url",
+                        "args": "https://www.onet.pl/"
+                    }
+                },
+
+                {
+                    "id": "3", "title": "Mixer Audio",
+                    "color": "#2ecc71",
+                    "type": "WIDGET",
+                    "x": 1, "y": 2, "w": 4, "h": 1,
+                    "payload": { "command": "open_mixer" }
+                },
+
+                {
+                    "id": "4",
+                    "title": "ram usage",
+                    "color": "#5865F2",
+                    "type": "LIVE DATA",
+                    "x": 1, "y": 3, "w": 2, "h": 2,
+                    "payload": { "sensor": "ram" }
+                },
+
+                {
+                    "id": "7",
+                    "title": "prev",
+                    "color": "#2ecc71",
+                    "type": "ACTION",
+                    "x": 3, "y": 3, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "hotkey",
+                        "args": "left arrow"
+                    }
+                },
+
+                {
+                    "id": "8",
+                    "title": "next",
+                    "color": "#2ecc71",
+                    "type": "ACTION",
+                    "x": 4, "y": 3, "w": 1, "h": 1,
+                    "payload": {
+                        "command": "hotkey",
+                        "args": "right arrow"
+                    }
+                }
+            ]
+        }
+    ]
+}
 
 const MainScreen = () => {
-    //to change
-    //const layoutData = res.data;
-    //const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id);
-    //const columns = activeProfile.grid.columns;
-    //const currentButtons = activeProfile.buttons;
-
     const router = useRouter();
-    const [activeProfile, setActiteProfile] = useState()
-    const [buttons, setButtons] = useState(INITIAL_BUTTONS)
+
+    const [layoutData, setLayoutData] = useState(INITIAL_LAYOUT)
+
     const [responseMessage, setResponseMessage] = useState('')
     const [isAudioChanging, setIsAudioChanging] = useState(false)
     const [appsAudio, setAppsAudio] = useState({})
     const [serverIP, setServerIP] = useState('')
     const [hardwareData, setHardwareData] = useState({ 'cpu': 0, 'ram': 0 })
 
-
     const BASE_URL = `http://${serverIP}:5000`
 
+    // 3. ZMIANA: Dynamiczne wyciąganie aktywnego profilu (to zapobiega błędom "undefined")
+    const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id) || layoutData.layouts[0];
+    const buttons = activeProfile.buttons;
 
     useFocusEffect(
         useCallback(() => {
@@ -145,8 +152,8 @@ const MainScreen = () => {
     const fetchLayoutFromPython = async (ip) => {
         try {
             const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`);
-            if (res.data && res.data.length > 0) {
-                setButtons(res.data);
+            if (res.data && res.data.layouts) {
+                setLayoutData(res.data);
             }
         } catch (e) {
             console.error("Nie udało się pobrać układu przycisków", e);
@@ -212,7 +219,7 @@ const MainScreen = () => {
 
     }
 
-    const renderItem = ({ item }) => {
+    const renderItem = (item) => {
         if (item.type === 'ACTION') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         }
@@ -226,7 +233,7 @@ const MainScreen = () => {
                 case 'ram':
                     return <ValueTile item={item} value={hardwareData.ram} />;
                 default:
-                    return <View style={styles.gridItem}><Text>Brak danych</Text></View>;
+                    return <View style={mainStyles.gridItem}><Text>Brak danych</Text></View>;
             }
         }
 
@@ -239,7 +246,7 @@ const MainScreen = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={mainStyles.container}>
             {isAudioChanging ? (
                 <VolumeControl
                     appsVolume={appsAudio}
@@ -248,114 +255,59 @@ const MainScreen = () => {
                 />
             ) : (
                 <>
-                    <View style={styles.header}>
-                        <Text style={styles.headerTitle}>DO(DECK)</Text>
+                    <View style={mainStyles.header}>
+                        <Text style={mainStyles.headerTitle}>DO(DECK)</Text>
                         <TouchableOpacity
-                            style={styles.settingsButton}
+                            style={mainStyles.settingsButton}
                             onPress={() => router.push('/SettingsScreen')}
                         >
-                            <Text style={styles.settingsButtonText}>Ustawienia</Text>
+                            <Text style={mainStyles.settingsButtonText}>Ustawienia</Text>
                         </TouchableOpacity>
                     </View>
 
                     <View style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: 10,
-                        padding: 10,
                         flex: 1,
+                        position: 'relative',
+                        padding: 5
                     }}>
                         {buttons.map((item) => {
-                            const gridPosition = {
-                                gridColumnStart: item.x,
-                                gridColumnEnd: item.x + item.w,
-                                gridRowStart: item.y,
-                                gridRowEnd: item.y + item.h,
-                            };
+                            // Pobieramy rozmiar siatki
+                            const totalCols = activeProfile.grid.columns;
+                            const totalRows = activeProfile.grid.rows;
+
+                            // Matematyka kafelków (szerokość, wysokość i przesunięcie w %)
+                            const widthPercent = (item.w / totalCols) * 100;
+                            const heightPercent = (item.h / totalRows) * 100;
+                            // Odejmujemy 1, bo siatka w JSON zaczyna się od 1, a pozycje liczymy od 0
+                            const leftPercent = ((item.x - 1) / totalCols) * 100;
+                            const topPercent = ((item.y - 1) / totalRows) * 100;
 
                             return (
-                                <View key={item.id} style={gridPosition}>
-
-                                    {renderItem(item)}
-
+                                <View
+                                    key={item.id}
+                                    style={{
+                                        position: 'absolute',
+                                        width: `${widthPercent}%`,
+                                        height: `${heightPercent}%`,
+                                        left: `${leftPercent}%`,
+                                        top: `${topPercent}%`,
+                                        padding: 5, // To zastępuje CSSowy 'gap'
+                                    }}
+                                >
+                                    <View style={{ flex: 1 }}>
+                                        {renderItem(item)}
+                                    </View>
                                 </View>
                             );
                         })}
                     </View>
-
-                    <View style={styles.footer}>
-                        <Text style={styles.response}>{responseMessage}</Text>
+                    <View style={mainStyles.footer}>
+                        <Text style={mainStyles.response}>{responseMessage}</Text>
                     </View>
                 </>
             )}
         </SafeAreaView>
     )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#121212',
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 40,
-        marginBottom: 20,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    settingsButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-    },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 2,
-    },
-    gridContainer: {
-        paddingHorizontal: 10,
-    },
-    gridItem: {
-        flex: 1,
-        margin: 8,
-        height: 120, // Kwadratowe kafelki
-        borderRadius: 15, // Zaokrąglone rogi wyglądają lepiej na mobile
-        justifyContent: 'center',
-        alignItems: 'center',
-        // Cienie dla iOS
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        // Cienie dla Androida
-        elevation: 8,
-    },
-    settingsButton: {
-        backgroundColor: '#007BFF',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 8,
-    },
-    gridItemText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    footer: {
-        height: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    response: {
-        color: '#aaa',
-        fontSize: 14,
-    }
-})
 
 export default MainScreen
