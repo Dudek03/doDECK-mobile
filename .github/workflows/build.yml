@@ -2,7 +2,7 @@ name: Build Frontend (Android APK)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build-android:
@@ -14,13 +14,13 @@ jobs:
       - name: Instalacja środowiska Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "24"
 
       - name: Instalacja środowiska Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: "temurin"
+          java-version: "17"
 
       - name: Instalacja paczek NPM
         run: npm install
