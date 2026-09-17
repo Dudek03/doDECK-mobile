@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
+import { io } from 'socket.io-client'
 import VolumeControl from './components/VolumeControl'
 import { useFocusEffect, useRouter } from "expo-router";
 import ActionTile from './components/ActionTile'
@@ -122,6 +123,8 @@ const MainScreen = () => {
     const [serverIP, setServerIP] = useState('')
     const [hardwareData, setHardwareData] = useState({ 'cpu': 0, 'ram': 0 })
 
+    const [socket, setSocket] = useState<any>(null)
+
     const BASE_URL = `http://${serverIP}:5000`
 
     // 3. ZMIANA: Dynamiczne wyciąganie aktywnego profilu (to zapobiega błędom "undefined")
@@ -160,63 +163,68 @@ const MainScreen = () => {
         }
     }
 
-    useFocusEffect(
-        useCallback(() => {
-            let isLiveData = buttons.some(btn => btn.type == "LIVE DATA")
-            if (!isLiveData || !serverIP) return
+    React.useEffect(() => {
+        if (!serverIP) return;
 
-            const RESTInterval = setInterval(async () => {
-                try {
-                    const res = await axios.get(`${BASE_URL}/system/getSystemUsage`);
-                    if (res.data && res.data != undefined) {
-                        setHardwareData(res.data)
-                    }
-                } catch (e) {
-                    console.error("nie udalo sie pobrac danych", e);
-                }
-            }, 3000)
+        const newSocket = io(`http://${serverIP}:5000`);
+        setSocket(newSocket);
 
-            return () => clearInterval(RESTInterval);
-        }, [serverIP, buttons])
-    )
+        newSocket.on('connect', () => {
+            setResponseMessage('Połączono na żywo!');
+
+            const isLiveData = buttons.some(btn => btn.type === "LIVE DATA");
+            if (isLiveData) {
+                newSocket.emit('subscribe_telemetry');
+            }
+        });
+
+        newSocket.on('system_update', (data) => {
+            setHardwareData(data);
+        });
+
+        newSocket.on('audio_volume_data', (data) => {
+            setAppsAudio(data);
+        });
+
+        return () => {
+            newSocket.disconnect();
+        };
+
+    }, [serverIP, buttons]);
+
+
+    const handleButtonPress = async (item) => {
+        if (!socket) {
+            setResponseMessage('Brak połączenia z serwerem');
+            return;
+        }
+
+        if (item.type === 'WIDGET' && item.payload.command === 'open_mixer') {
+            socket.emit('get_audio_volume');
+            setIsAudioChanging(true);
+            return;
+        }
+
+        else if (item.type === 'ACTION') {
+            socket.emit('trigger_action', {
+                command: item.payload.command,
+                args: item.payload.args || ''
+            });
+
+            setResponseMessage('Wysłano komendę');
+            setTimeout(() => setResponseMessage(''), 3000);
+        }
+    }
 
     const setAppVolume = async (name, newVolume) => {
         try {
-            await axios.post(`${BASE_URL}/audio/setAppVolume`, {
+            await socket.emit(`set_audio_volume`, {
                 app: name,
                 volume: newVolume
             })
         } catch (error) {
             console.error('Błąd zmiany głośności dla', name, error)
         }
-    }
-
-    const handleButtonPress = async (item) => {
-        if (item.type === 'WIDGET' && item.payload.command === 'open_mixer') {
-            try {
-                const response = await axios.get(`${BASE_URL}/audio/getAppsVolume`)
-                setAppsAudio(response.data)
-                setIsAudioChanging(true)
-            } catch (error) {
-                setResponseMessage('Błąd pobierania audio: ' + error.message)
-            }
-            return
-        }
-
-        else if (item.type === 'ACTION') {
-            try {
-                const response = await axios.post(`${BASE_URL}/dispatcher/trigger`, {
-                    command: item.payload.command,
-                    args: item.payload.args || ''
-                })
-
-                setResponseMessage(response.data.msg || 'Wykonano')
-                setTimeout(() => setResponseMessage(''), 3000)
-            } catch (error) {
-                setResponseMessage('Błąd połączenia: ' + error.message)
-            }
-        }
-
     }
 
     const renderItem = (item) => {
