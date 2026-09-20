@@ -34,9 +34,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
+<<<<<<< HEAD
       "expo-font",
       "expo-status-bar",
       "expo-web-browser"
+=======
+      "expo-web-browser",
+      "expo-font",
+      "expo-status-bar"
+>>>>>>> e5cd8fabac01044d2b26b23950c70a3016c9de24
     ],
     "experiments": {
       "typedRoutes": true
