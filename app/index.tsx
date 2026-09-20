@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios'
@@ -9,146 +9,73 @@ import ActionTile from './components/ActionTile'
 import ValueTile from './components/ValueTile'
 import WidgetTile from './components/WidgetTile'
 
-const INITIAL_BUTTONS = [
-    {
-        "id": "1",
-        "title": "pulpit",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 1,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "win+d" }
-    },
-    {
-        "id": "2",
-        "title": "task-manager",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 2,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "ctrl+shift+esc" }
-    },
-    {
-        "id": "5",
-        "title": "pliki",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 3,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "win+e" }
-    },
-    {
-        "id": "6",
-        "title": "onet",
-        "color": "#1a1a1a",
-        "type": "ACTION",
-        "x": 4,
-        "y": 1,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "open_url", "args": "https://www.onet.pl/" }
-    },
-    {
-        "id": "3",
-        "title": "Mixer Audio",
-        "color": "#2ecc71",
-        "type": "WIDGET",
-        "x": 1,
-        "y": 2,
-        "w": 2,
-        "h": 1,
-        "payload": { "command": "open_mixer" }
-    },
-    {
-        "id": "4",
-        "title": "ram usage",
-        "color": "#5865F2",
-        "type": "LIVE DATA",
-        "x": 1,
-        "y": 3,
-        "w": 2,
-        "h": 2,
-        "payload": { "sensor": "ram" }
-    },
-    {
-        "id": "7",
-        "title": "prev",
-        "color": "#2ecc71",
-        "type": "ACTION",
-        "x": 3,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "left arrow" }
-    },
-    {
-        "id": "8",
-        "title": "next",
-        "color": "#2ecc71",
-        "type": "ACTION",
-        "x": 4,
-        "y": 3,
-        "w": 1,
-        "h": 1,
-        "payload": { "command": "hotkey", "args": "right arrow" }
-    }
-]
-
+const INITIAL_LAYOUT = {
+    "active_layout_id": "profile_main",
+    "layouts": [
+        {
+            "id": "profile_main",
+            "name": "Główny Panel",
+            "grid": { "columns": 4, "rows": 4 },
+            "buttons": [
+                { "id": "1", "title": "pulpit", "color": "#1a1a1a", "type": "ACTION", "x": 1, "y": 1, "w": 1, "h": 1, "payload": { "command": "hotkey", "args": "win+d" } },
+                { "id": "2", "title": "task-manager", "color": "#1a1a1a", "type": "ACTION", "x": 2, "y": 1, "w": 1, "h": 1, "payload": { "command": "hotkey", "args": "ctrl+shift+esc" } },
+                { "id": "5", "title": "pliki", "color": "#1a1a1a", "type": "ACTION", "x": 3, "y": 1, "w": 1, "h": 1, "payload": { "command": "hotkey", "args": "win+e" } },
+                { "id": "6", "title": "onet", "color": "#1a1a1a", "type": "ACTION", "x": 4, "y": 1, "w": 1, "h": 1, "payload": { "command": "open_url", "args": "https://www.onet.pl/" } },
+                { "id": "3", "title": "Mixer Audio", "color": "#2ecc71", "type": "WIDGET", "x": 1, "y": 2, "w": 4, "h": 1, "payload": { "command": "open_mixer" } },
+                { "id": "4", "title": "ram usage", "color": "#5865F2", "type": "LIVE DATA", "x": 1, "y": 3, "w": 2, "h": 2, "payload": { "sensor": "ram" } },
+                { "id": "7", "title": "prev", "color": "#2ecc71", "type": "ACTION", "x": 3, "y": 3, "w": 1, "h": 1, "payload": { "command": "hotkey", "args": "left arrow" } },
+                { "id": "8", "title": "next", "color": "#2ecc71", "type": "ACTION", "x": 4, "y": 3, "w": 1, "h": 1, "payload": { "command": "hotkey", "args": "right arrow" } }
+            ]
+        }
+    ]
+}
 
 const MainScreen = () => {
-    //to change
-    //const layoutData = res.data;
-    //const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id);
-    //const columns = activeProfile.grid.columns;
-    //const currentButtons = activeProfile.buttons;
-
     const router = useRouter();
-    const [activeProfile, setActiteProfile] = useState()
-    const [buttons, setButtons] = useState(INITIAL_BUTTONS)
+
+    const [layoutData, setLayoutData] = useState(INITIAL_LAYOUT)
     const [responseMessage, setResponseMessage] = useState('')
     const [isAudioChanging, setIsAudioChanging] = useState(false)
     const [appsAudio, setAppsAudio] = useState({})
     const [serverIP, setServerIP] = useState('')
     const [hardwareData, setHardwareData] = useState({ 'cpu': 0, 'ram': 0 })
 
-
     const BASE_URL = `http://${serverIP}:5000`
 
+    const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id) || layoutData.layouts[0];
+    const columns = activeProfile.grid.columns;
+    const rows = activeProfile.grid.rows;
+    const buttons = activeProfile.buttons;
 
     useFocusEffect(
         useCallback(() => {
             const checkAndLoadIp = async () => {
                 try {
                     const savedIp = await AsyncStorage.getItem('serverIP');
-
                     if (savedIp && savedIp !== serverIP) {
                         setServerIP(savedIp);
-
                         fetchLayoutFromPython(savedIp);
                     }
                 } catch (error) {
-                    console.log('Błąd przy wczytywaniu IP z SecureStore:', error);
+                    console.log('Błąd przy wczytywaniu IP:', error);
                 }
             };
-
             checkAndLoadIp();
-
         }, [serverIP])
     );
 
     const fetchLayoutFromPython = async (ip) => {
         try {
+            setResponseMessage('Łączenie z serwerem...');
             const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`);
-            if (res.data && res.data.length > 0) {
-                setButtons(res.data);
+            if (res.data && res.data.layouts) {
+                setLayoutData(res.data);
+                setResponseMessage('Połączono!');
+                setTimeout(() => setResponseMessage(''), 2000);
             }
         } catch (e) {
+            // Teraz błąd sieci wyświetli się na dole ekranu telefonu!
+            setResponseMessage('Błąd pobierania: ' + e.message);
             console.error("Nie udało się pobrać układu przycisków", e);
         }
     }
@@ -195,7 +122,6 @@ const MainScreen = () => {
             }
             return
         }
-
         else if (item.type === 'ACTION') {
             try {
                 const response = await axios.post(`${BASE_URL}/dispatcher/trigger`, {
@@ -209,33 +135,17 @@ const MainScreen = () => {
                 setResponseMessage('Błąd połączenia: ' + error.message)
             }
         }
-
     }
 
-    const renderItem = ({ item }) => {
-        if (item.type === 'ACTION') {
-            return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
-        }
-
+    const renderItem = (item) => {
+        if (item.type === 'ACTION') return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         if (item.type === 'LIVE DATA') {
             const sensor = item.payload.sensor;
-
-            switch (sensor) {
-                case 'cpu':
-                    return <ValueTile item={item} value={hardwareData.cpu} />;
-                case 'ram':
-                    return <ValueTile item={item} value={hardwareData.ram} />;
-                default:
-                    return <View style={styles.gridItem}><Text>Brak danych</Text></View>;
-            }
+            if (sensor === 'cpu') return <ValueTile item={item} value={hardwareData.cpu} />;
+            if (sensor === 'ram') return <ValueTile item={item} value={hardwareData.ram} />;
+            return <View style={styles.gridItem}><Text>Brak danych</Text></View>;
         }
-
-        if (item.type === 'WIDGET') {
-            return <WidgetTile
-                item={item}
-                onPress={() => handleButtonPress(item)}
-            />;
-        }
+        if (item.type === 'WIDGET') return <WidgetTile item={item} onPress={() => handleButtonPress(item)} />;
     }
 
     return (
@@ -250,34 +160,35 @@ const MainScreen = () => {
                 <>
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>DO(DECK)</Text>
-                        <TouchableOpacity
-                            style={styles.settingsButton}
-                            onPress={() => router.push('/SettingsScreen')}
-                        >
+                        <TouchableOpacity style={styles.settingsButton} onPress={() => router.push('/SettingsScreen')}>
                             <Text style={styles.settingsButtonText}>Ustawienia</Text>
                         </TouchableOpacity>
                     </View>
 
-                    <View style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: 10,
-                        padding: 10,
-                        flex: 1,
-                    }}>
+                    {/* Całkowicie nowy, kuloodporny kontener układu */}
+                    <View style={styles.gridContainer}>
                         {buttons.map((item) => {
-                            const gridPosition = {
-                                gridColumnStart: item.x,
-                                gridColumnEnd: item.x + item.w,
-                                gridRowStart: item.y,
-                                gridRowEnd: item.y + item.h,
-                            };
+                            // Obliczamy pozycję i rozmiar w procentach
+                            const widthPct = (item.w / columns) * 100;
+                            const heightPct = (item.h / rows) * 100;
+                            const leftPct = ((item.x - 1) / columns) * 100;
+                            const topPct = ((item.y - 1) / rows) * 100;
 
                             return (
-                                <View key={item.id} style={gridPosition}>
-
-                                    {renderItem(item)}
-
+                                <View
+                                    key={item.id}
+                                    style={{
+                                        position: 'absolute',
+                                        width: `${widthPct}%`,
+                                        height: `${heightPct}%`,
+                                        left: `${leftPct}%`,
+                                        top: `${topPct}%`,
+                                        padding: 5 // marginesy między kafelkami
+                                    }}
+                                >
+                                    <View style={{ flex: 1, alignItems: 'stretch', justifyContent: 'center' }}>
+                                        {renderItem(item)}
+                                    </View>
                                 </View>
                             );
                         })}
@@ -293,69 +204,29 @@ const MainScreen = () => {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#121212',
-    },
+    container: { flex: 1, backgroundColor: '#121212' },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: 40,
-        marginBottom: 20,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        marginTop: 40, marginBottom: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: '#eee',
+        paddingHorizontal: 15
     },
-    settingsButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-    },
-    headerTitle: {
-        color: '#fff',
-        fontSize: 24,
-        fontWeight: 'bold',
-        letterSpacing: 2,
-    },
+    settingsButtonText: { color: '#fff', fontWeight: '600' },
+    headerTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold', letterSpacing: 2 },
+
+    // Zmodyfikowany kontener, wymagany dla pozycjonowania absolutnego
     gridContainer: {
-        paddingHorizontal: 10,
-    },
-    gridItem: {
         flex: 1,
-        margin: 8,
-        height: 120, // Kwadratowe kafelki
-        borderRadius: 15, // Zaokrąglone rogi wyglądają lepiej na mobile
-        justifyContent: 'center',
-        alignItems: 'center',
-        // Cienie dla iOS
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-        // Cienie dla Androida
-        elevation: 8,
+        position: 'relative',
+        marginHorizontal: 10,
     },
-    settingsButton: {
-        backgroundColor: '#007BFF',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 8,
+
+    gridItem: {
+        flex: 1, margin: 8, height: 120, borderRadius: 15, justifyContent: 'center', alignItems: 'center',
+        shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4.65, elevation: 8,
     },
-    gridItemText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        textAlign: 'center',
-    },
-    footer: {
-        height: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    response: {
-        color: '#aaa',
-        fontSize: 14,
-    }
+    settingsButton: { backgroundColor: '#007BFF', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 8 },
+    footer: { height: 60, justifyContent: 'center', alignItems: 'center' },
+    response: { color: '#aaa', fontSize: 14 }
 })
 
 export default MainScreen
