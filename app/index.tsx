@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -121,14 +121,16 @@ const MainScreen = () => {
     const [appsAudio, setAppsAudio] = useState({})
     const [serverIP, setServerIP] = useState('')
     const [hardwareData, setHardwareData] = useState({ 'cpu': 0, 'ram': 0 })
+    const [socket, setSocket] = useState(null)
 
-    const [socket, setSocket] = useState<any>(null)
+    const [activeLayoutId, setActiveLayoutId] = useState(null)
+    const [profileStack, setProfileStack] = useState([])
 
     const BASE_URL = `http://${serverIP}:5000`
 
-    // 3. ZMIANA: Dynamiczne wyciąganie aktywnego profilu (to zapobiega błędom "undefined")
-    const activeProfile = layoutData.layouts.find(l => l.id === layoutData.active_layout_id) || layoutData.layouts[0];
-    const buttons = activeProfile.buttons;
+    const currentLayoutId = activeLayoutId || layoutData.active_layout_id;
+    const activeProfile = layoutData.layouts.find(l => l.id === currentLayoutId) || layoutData.layouts[0];
+    const buttons = activeProfile.buttons || [];
 
     useFocusEffect(
         useCallback(() => {
@@ -153,15 +155,17 @@ const MainScreen = () => {
             const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`);
             if (res.data && res.data.layouts) {
                 setLayoutData(res.data);
+                // Resetujemy stos przy pobraniu z serwera, żeby uniknąć osieroconych widoków
+                setProfileStack([]);
+                setActiveLayoutId(res.data.active_layout_id);
             }
         } catch (e) {
-            // Teraz błąd sieci wyświetli się na dole ekranu telefonu!
             setResponseMessage('Błąd pobierania: ' + e.message);
             console.error("Nie udało się pobrać układu przycisków", e);
         }
     }
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!serverIP) return;
 
         const newSocket = io(`http://${serverIP}:5000`);
@@ -192,6 +196,16 @@ const MainScreen = () => {
 
 
     const handleButtonPress = async (item) => {
+        // NOWE: Obsługa folderów (Działa nawet bez połączonego socketu)
+        if (item.type === 'FOLDER') {
+            const targetProfileId = item.payload?.args;
+            if (targetProfileId && layoutData.layouts.find(l => l.id === targetProfileId)) {
+                setProfileStack([...profileStack, currentLayoutId]);
+                setActiveLayoutId(targetProfileId);
+            }
+            return;
+        }
+
         if (!socket) {
             setResponseMessage('Brak połączenia z serwerem');
             return;
@@ -202,7 +216,6 @@ const MainScreen = () => {
             setIsAudioChanging(true);
             return;
         }
-
         else if (item.type === 'ACTION') {
             socket.emit('trigger_action', {
                 command: item.payload.command,
@@ -213,6 +226,15 @@ const MainScreen = () => {
             setTimeout(() => setResponseMessage(''), 3000);
         }
     }
+
+    const handleGoBack = () => {
+        if (profileStack.length > 0) {
+            const newStack = [...profileStack];
+            const previousProfileId = newStack.pop();
+            setProfileStack(newStack);
+            setActiveLayoutId(previousProfileId);
+        }
+    };
 
     const setAppVolume = async (name, newVolume) => {
         try {
@@ -226,13 +248,13 @@ const MainScreen = () => {
     }
 
     const renderItem = (item) => {
-        if (item.type === 'ACTION') {
+        // FOLDER używa wizualnie tego samego kafelka co ACTION
+        if (item.type === 'ACTION' || item.type === 'FOLDER') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         }
 
         if (item.type === 'LIVE DATA') {
             const sensor = item.payload.sensor;
-
             switch (sensor) {
                 case 'cpu':
                     return <ValueTile item={item} value={hardwareData.cpu} />;
@@ -249,7 +271,6 @@ const MainScreen = () => {
                 onPress={() => handleButtonPress(item)}
             />;
         }
-        if (item.type === 'WIDGET') return <WidgetTile item={item} onPress={() => handleButtonPress(item)} />;
     }
 
     return (
@@ -272,20 +293,27 @@ const MainScreen = () => {
                         </TouchableOpacity>
                     </View>
 
+                    {/* NOWE: Przycisk Wstecz zintegrowany z UI, jeśli jesteśmy w folderze */}
+                    {profileStack.length > 0 && (
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#3498db', padding: 12, marginHorizontal: 5, borderRadius: 8, alignItems: 'center', marginBottom: 5 }}
+                            onPress={handleGoBack}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>⬅ Wstecz</Text>
+                        </TouchableOpacity>
+                    )}
+
                     <View style={{
                         flex: 1,
                         position: 'relative',
                         padding: 5
                     }}>
                         {buttons.map((item) => {
-                            // Pobieramy rozmiar siatki
-                            const totalCols = activeProfile.grid.columns;
-                            const totalRows = activeProfile.grid.rows;
+                            const totalCols = activeProfile.grid.columns || 4;
+                            const totalRows = activeProfile.grid.rows || 4;
 
-                            // Matematyka kafelków (szerokość, wysokość i przesunięcie w %)
                             const widthPercent = (item.w / totalCols) * 100;
                             const heightPercent = (item.h / totalRows) * 100;
-                            // Odejmujemy 1, bo siatka w JSON zaczyna się od 1, a pozycje liczymy od 0
                             const leftPercent = ((item.x - 1) / totalCols) * 100;
                             const topPercent = ((item.y - 1) / totalRows) * 100;
 
@@ -298,7 +326,7 @@ const MainScreen = () => {
                                         height: `${heightPercent}%`,
                                         left: `${leftPercent}%`,
                                         top: `${topPercent}%`,
-                                        padding: 5, // To zastępuje CSSowy 'gap'
+                                        padding: 5,
                                     }}
                                 >
                                     <View style={{ flex: 1 }}>
