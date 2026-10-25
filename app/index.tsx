@@ -10,6 +10,8 @@ import ActionTile from './components/ActionTile'
 import ValueTile from './components/ValueTile'
 import WidgetTile from './components/WidgetTile'
 import { mainStyles } from '../assets/styles/main'
+import CryptoJS from 'crypto-js';
+import ScannerScreen from './ScannerScreen'
 
 const INITIAL_LAYOUT = {
     "active_layout_id": "profile_main",
@@ -125,6 +127,7 @@ const MainScreen = () => {
 
     const [activeLayoutId, setActiveLayoutId] = useState(null)
     const [profileStack, setProfileStack] = useState([])
+    const [secretKey, setSecretKey] = useState('');
 
     const BASE_URL = `http://${serverIP}:5000`
 
@@ -137,6 +140,9 @@ const MainScreen = () => {
             const checkAndLoadIp = async () => {
                 try {
                     const savedIp = await AsyncStorage.getItem('serverIP');
+                    const savedSecret = await AsyncStorage.getItem('SECRET_KEY'); // NOWE
+                    if (savedSecret) setSecretKey(savedSecret); // NOWE
+
                     if (savedIp && savedIp !== serverIP) {
                         setServerIP(savedIp);
                         fetchLayoutFromPython(savedIp);
@@ -196,7 +202,6 @@ const MainScreen = () => {
 
 
     const handleButtonPress = async (item) => {
-        // NOWE: Obsługa folderów (Działa nawet bez połączonego socketu)
         if (item.type === 'FOLDER') {
             const targetProfileId = item.payload?.args;
             if (targetProfileId && layoutData.layouts.find(l => l.id === targetProfileId)) {
@@ -216,10 +221,41 @@ const MainScreen = () => {
             setIsAudioChanging(true);
             return;
         }
-        else if (item.type === 'ACTION') {
+
+        if (!secretKey) {
+            alert("Nie jesteś autoryzowany. Zeskanuj kod QR.");
+            return;
+        }
+
+        const timestamp = (Date.now() / 1000).toString();
+
+        if (item.type === 'MACRO') {
+            const steps = item.payload.steps || [];
+            const rawString = JSON.stringify(steps) + timestamp;
+            const signature = CryptoJS.HmacSHA256(rawString, secretKey).toString(CryptoJS.enc.Hex);
+
+            socket.emit('trigger_macro', {
+                steps: steps,
+                timestamp: timestamp,
+                signature: signature
+            });
+
+            setResponseMessage('Wykonuję sekwencję...');
+            setTimeout(() => setResponseMessage(''), 3000);
+            return;
+        }
+        else if (item.type === 'ACTION' || item.type === 'WORKSPACE') {
+            const command = item.payload.command;
+            const args = item.payload.args || '';
+
+            const rawString = `${command}${args}${timestamp}`;
+            const signature = CryptoJS.HmacSHA256(rawString, secretKey).toString(CryptoJS.enc.Hex);
+
             socket.emit('trigger_action', {
-                command: item.payload.command,
-                args: item.payload.args || ''
+                command: command,
+                args: args,
+                timestamp: timestamp,
+                signature: signature
             });
 
             setResponseMessage('Wysłano komendę');
@@ -248,7 +284,6 @@ const MainScreen = () => {
     }
 
     const renderItem = (item) => {
-        // FOLDER używa wizualnie tego samego kafelka co ACTION
         if (item.type === 'ACTION' || item.type === 'FOLDER') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         }
@@ -291,9 +326,16 @@ const MainScreen = () => {
                         >
                             <Text style={mainStyles.settingsButtonText}>Ustawienia</Text>
                         </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{ backgroundColor: '#2ecc71', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 5, justifyContent: 'center' }}
+                            onPress={() => router.push('/ScannerScreen')}
+                        >
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>📷 Skanuj QR</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* NOWE: Przycisk Wstecz zintegrowany z UI, jeśli jesteśmy w folderze */}
+
                     {profileStack.length > 0 && (
                         <TouchableOpacity
                             style={{ backgroundColor: '#3498db', padding: 12, marginHorizontal: 5, borderRadius: 8, alignItems: 'center', marginBottom: 5 }}
