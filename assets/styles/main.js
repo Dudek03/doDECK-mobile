@@ -9,15 +9,12 @@ export const mainStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 20,
-    paddingBottom: 10,
+    marginTop: 20,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  settingsButtonText: {
-    color: "#fff",
-    fontWeight: "600",
+    borderBottomColor: "#333",
   },
   headerTitle: {
     color: "#fff",
@@ -25,38 +22,62 @@ export const mainStyles = StyleSheet.create({
     fontWeight: "bold",
     letterSpacing: 2,
   },
-  gridContainer: {
-    paddingHorizontal: 10,
-  },
-  gridItem: {
-    flex: 1,
-    margin: 8,
-    height: 120, // Kwadratowe kafelki
-    borderRadius: 15, // Zaokrąglone rogi wyglądają lepiej na mobile
-    justifyContent: "center",
+  headerButtonsContainer: {
+    flexDirection: "row",
+    gap: 15,
     alignItems: "center",
-    // Cienie dla iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    // Cienie dla Androida
-    elevation: 8,
   },
   settingsButton: {
     backgroundColor: "#007BFF",
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 8,
+    justifyContent: "center",
   },
-  gridItemText: {
-    color: "white",
+  settingsButtonText: {
+    color: "#fff",
     fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
+    fontWeight: "bold",
+  },
+  qrButton: {
+    backgroundColor: "#2ecc71",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    justifyContent: "center",
+  },
+  qrButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  backButton: {
+    backgroundColor: "#3498db",
+    padding: 12,
+    marginHorizontal: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  backButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  gridContainer: {
+    flex: 1,
+    position: "relative",
+    padding: 10,
+  },
+  gridItemWrapper: {
+    position: "absolute",
+    padding: 6,
+  },
+  gridItemInner: {
+    flex: 1,
   },
   footer: {
-    height: 60,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
   },

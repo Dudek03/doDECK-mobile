@@ -320,36 +320,34 @@ const MainScreen = () => {
                 <>
                     <View style={mainStyles.header}>
                         <Text style={mainStyles.headerTitle}>DO(DECK)</Text>
-                        <TouchableOpacity
-                            style={mainStyles.settingsButton}
-                            onPress={() => router.push('/SettingsScreen')}
-                        >
-                            <Text style={mainStyles.settingsButtonText}>Ustawienia</Text>
-                        </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={{ backgroundColor: '#2ecc71', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 5, justifyContent: 'center' }}
-                            onPress={() => router.push('/ScannerScreen')}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>📷 Skanuj QR</Text>
-                        </TouchableOpacity>
+                        <View style={mainStyles.headerButtonsContainer}>
+                            <TouchableOpacity
+                                style={mainStyles.settingsButton}
+                                onPress={() => router.push('/SettingsScreen')}
+                            >
+                                <Text style={mainStyles.settingsButtonText}>Ustawienia</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={mainStyles.qrButton}
+                                onPress={() => router.push('/ScannerScreen')}
+                            >
+                                <Text style={mainStyles.qrButtonText}>📷 Skanuj QR</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-
 
                     {profileStack.length > 0 && (
                         <TouchableOpacity
-                            style={{ backgroundColor: '#3498db', padding: 12, marginHorizontal: 5, borderRadius: 8, alignItems: 'center', marginBottom: 5 }}
+                            style={mainStyles.backButton}
                             onPress={handleGoBack}
                         >
-                            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>⬅ Wstecz</Text>
+                            <Text style={mainStyles.backButtonText}>⬅ Wstecz</Text>
                         </TouchableOpacity>
                     )}
 
-                    <View style={{
-                        flex: 1,
-                        position: 'relative',
-                        padding: 5
-                    }}>
+                    <View style={mainStyles.gridContainer}>
                         {buttons.map((item) => {
                             const totalCols = activeProfile.grid.columns || 4;
                             const totalRows = activeProfile.grid.rows || 4;
@@ -362,29 +360,31 @@ const MainScreen = () => {
                             return (
                                 <View
                                     key={item.id}
-                                    style={{
-                                        position: 'absolute',
-                                        width: `${widthPercent}%`,
-                                        height: `${heightPercent}%`,
-                                        left: `${leftPercent}%`,
-                                        top: `${topPercent}%`,
-                                        padding: 5,
-                                    }}
+                                    style={[
+                                        mainStyles.gridItemWrapper,
+                                        {
+                                            width: `${widthPercent}%`,
+                                            height: `${heightPercent}%`,
+                                            left: `${leftPercent}%`,
+                                            top: `${topPercent}%`,
+                                        }
+                                    ]}
                                 >
-                                    <View style={{ flex: 1 }}>
+                                    <View style={mainStyles.gridItemInner}>
                                         {renderItem(item)}
                                     </View>
                                 </View>
                             );
                         })}
                     </View>
+
                     <View style={mainStyles.footer}>
                         <Text style={mainStyles.response}>{responseMessage}</Text>
                     </View>
                 </>
             )}
-        </SafeAreaView >
-    )
+        </SafeAreaView>
+    );
 }
 
 export default MainScreen
