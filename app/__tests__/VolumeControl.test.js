@@ -1,5 +1,5 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, screen, fireEvent } from "@testing-library/react-native";
 import VolumeControl from "../components/VolumeControl";
 
 describe("VolumeControl Component", () => {
@@ -10,8 +10,8 @@ describe("VolumeControl Component", () => {
     ],
   };
 
-  it("poprawnie renderuje listę aplikacji z ich głośnościami", () => {
-    const { getByText } = render(
+  it("poprawnie renderuje listę aplikacji z ich głośnościami", async () => {
+    await render(
       <VolumeControl
         appsVolume={mockAppsVolume}
         closeFunction={jest.fn()}
@@ -19,15 +19,15 @@ describe("VolumeControl Component", () => {
       />,
     );
 
-    expect(getByText("Spotify.exe")).toBeTruthy();
-    expect(getByText("50%")).toBeTruthy();
-    expect(getByText("Discord.exe")).toBeTruthy();
-    expect(getByText("80%")).toBeTruthy();
+    expect(screen.getByText("Spotify.exe")).toBeTruthy();
+    expect(screen.getByText("50%")).toBeTruthy();
+    expect(screen.getByText("Discord.exe")).toBeTruthy();
+    expect(screen.getByText("80%")).toBeTruthy();
   });
 
-  it("wywołuje closeFunction po wciśnięciu przycisku ZAMKNIJ", () => {
+  it("wywołuje closeFunction po wciśnięciu przycisku ZAMKNIJ", async () => {
     const mockClose = jest.fn();
-    const { getByText } = render(
+    await render(
       <VolumeControl
         appsVolume={mockAppsVolume}
         closeFunction={mockClose}
@@ -35,7 +35,7 @@ describe("VolumeControl Component", () => {
       />,
     );
 
-    fireEvent.press(getByText("ZAMKNIJ"));
+    fireEvent.press(screen.getByText("ZAMKNIJ"));
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -8,11 +8,19 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll",
+    "test": "jest --watchAll=false",
+    "test:watch": "jest --watchAll",
     "lint": "expo lint"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "moduleNameMapper": {
+      "^react-native/setup-env$": "<rootDir>/node_modules/react-native/src/setup-env.js",
+      "^react-native/react-private-interface$": "<rootDir>/node_modules/react-native/Libraries/ReactPrivate/ReactNativePrivateInterface.js"
+    }
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -30,6 +38,7 @@
     "expo-font": "~58.0.10",
     "expo-haptics": "~58.0.7",
     "expo-linking": "~58.0.14",
+    "expo-modules-core": "^58.0.26",
     "expo-router": "~58.0.26",
     "expo-splash-screen": "~58.0.11",
     "expo-status-bar": "~58.0.4",
@@ -49,6 +58,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
+    "@react-native/assets-registry": "^0.88.0",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "^29.5.12",
     "@types/react": "~19.2.4",

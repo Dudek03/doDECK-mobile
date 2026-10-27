@@ -11,7 +11,6 @@ import ValueTile from './components/ValueTile'
 import WidgetTile from './components/WidgetTile'
 import { mainStyles } from '../assets/styles/main'
 import CryptoJS from 'crypto-js';
-import ScannerScreen from './ScannerScreen'
 
 const INITIAL_LAYOUT = {
     "active_layout_id": "profile_main",
@@ -179,11 +178,7 @@ const MainScreen = () => {
 
         newSocket.on('connect', () => {
             setResponseMessage('Połączono na żywo!');
-
-            const isLiveData = buttons.some(btn => btn.type === "LIVE DATA");
-            if (isLiveData) {
-                newSocket.emit('subscribe_telemetry');
-            }
+            newSocket.emit('subscribe_telemetry');
         });
 
         newSocket.on('system_update', (data) => {
@@ -198,7 +193,7 @@ const MainScreen = () => {
             newSocket.disconnect();
         };
 
-    }, [serverIP, buttons]);
+    }, [serverIP]);
 
 
     const handleButtonPress = async (item) => {
@@ -248,7 +243,8 @@ const MainScreen = () => {
             const command = item.payload.command;
             const args = item.payload.args || '';
 
-            const rawString = `${command}${args}${timestamp}`;
+            const argsForSignature = typeof args === 'object' && args !== null ? JSON.stringify(args) : (args || '');
+            const rawString = `${command}${argsForSignature}${timestamp}`;
             const signature = CryptoJS.HmacSHA256(rawString, secretKey).toString(CryptoJS.enc.Hex);
 
             socket.emit('trigger_action', {
@@ -284,7 +280,7 @@ const MainScreen = () => {
     }
 
     const renderItem = (item) => {
-        if (item.type === 'ACTION' || item.type === 'FOLDER') {
+        if (item.type === 'ACTION' || item.type === 'FOLDER' || item.type === 'WORKSPACE' || item.type === 'MACRO') {
             return <ActionTile item={item} onPress={() => handleButtonPress(item)} />;
         }
 

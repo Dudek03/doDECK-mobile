@@ -14,7 +14,7 @@ jobs:
       - name: Instalacja środowiska Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20"
 
       - name: Instalacja środowiska Java
         uses: actions/setup-java@v4
@@ -23,7 +23,10 @@ jobs:
           java-version: "17"
 
       - name: Instalacja paczek NPM
-        run: npm install
+        run: npm ci
+
+      - name: Uruchomienie testów jednostkowych
+        run: npm test
 
       - name: Generowanie natywnego kodu (Expo Prebuild)
         run: npx expo prebuild --platform android --clean
