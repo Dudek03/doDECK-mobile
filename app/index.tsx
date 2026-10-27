@@ -124,6 +124,7 @@ const MainScreen = () => {
     const [hardwareData, setHardwareData] = useState({ 'cpu': 0, 'ram': 0 })
     const [socket, setSocket] = useState(null)
 
+    const [isConnected, setIsConnected] = useState(false)
     const [activeLayoutId, setActiveLayoutId] = useState(null)
     const [profileStack, setProfileStack] = useState([])
     const [secretKey, setSecretKey] = useState('');
@@ -136,36 +137,54 @@ const MainScreen = () => {
 
     useFocusEffect(
         useCallback(() => {
-            const checkAndLoadIp = async () => {
+            const checkAndLoadConfig = async () => {
                 try {
                     const savedIp = await AsyncStorage.getItem('serverIP');
-                    const savedSecret = await AsyncStorage.getItem('SECRET_KEY'); // NOWE
-                    if (savedSecret) setSecretKey(savedSecret); // NOWE
+                    const savedSecret = await AsyncStorage.getItem('SECRET_KEY');
+                    const savedLayoutId = await AsyncStorage.getItem('activeLayoutId');
+                    const cachedLayoutRaw = await AsyncStorage.getItem('cachedLayout');
 
-                    if (savedIp && savedIp !== serverIP) {
+                    if (savedSecret) setSecretKey(savedSecret);
+                    else setSecretKey('');
+
+                    if (cachedLayoutRaw && (!layoutData || layoutData === INITIAL_LAYOUT)) {
+                        try {
+                            const parsed = JSON.parse(cachedLayoutRaw);
+                            if (parsed && parsed.layouts) {
+                                setLayoutData(parsed);
+                            }
+                        } catch (e) {}
+                    }
+
+                    if (savedLayoutId) {
+                        setActiveLayoutId(savedLayoutId);
+                    }
+
+                    if (savedIp) {
                         setServerIP(savedIp);
-                        fetchLayoutFromPython(savedIp);
+                        fetchLayoutFromPython(savedIp, savedLayoutId);
                     }
                 } catch (error) {
-                    console.log('Błąd przy wczytywaniu IP:', error);
+                    console.log('Błąd przy wczytywaniu konfiguracji:', error);
                 }
             };
-            checkAndLoadIp();
-        }, [serverIP])
+            checkAndLoadConfig();
+        }, [])
     );
 
-    const fetchLayoutFromPython = async (ip) => {
+    const fetchLayoutFromPython = async (ip, preferredLayoutId = null) => {
         try {
-            setResponseMessage('Łączenie z serwerem...');
-            const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`);
+            const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`, { timeout: 3000 });
             if (res.data && res.data.layouts) {
                 setLayoutData(res.data);
-                // Resetujemy stos przy pobraniu z serwera, żeby uniknąć osieroconych widoków
+                await AsyncStorage.setItem('cachedLayout', JSON.stringify(res.data));
                 setProfileStack([]);
-                setActiveLayoutId(res.data.active_layout_id);
+                const chosenId = preferredLayoutId && res.data.layouts.some(l => l.id === preferredLayoutId)
+                    ? preferredLayoutId
+                    : res.data.active_layout_id;
+                setActiveLayoutId(chosenId);
             }
         } catch (e) {
-            setResponseMessage('Błąd pobierania: ' + e.message);
             console.error("Nie udało się pobrać układu przycisków", e);
         }
     }
@@ -173,12 +192,27 @@ const MainScreen = () => {
     useEffect(() => {
         if (!serverIP) return;
 
-        const newSocket = io(`http://${serverIP}:5000`);
+        const newSocket = io(`http://${serverIP}:5000`, {
+            transports: ['websocket'],
+            timeout: 5000,
+        });
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
+            setIsConnected(true);
             setResponseMessage('Połączono na żywo!');
+            setTimeout(() => setResponseMessage(''), 2500);
             newSocket.emit('subscribe_telemetry');
+        });
+
+        newSocket.on('disconnect', () => {
+            setIsConnected(false);
+            setResponseMessage('Rozłączono z serwerem');
+            setTimeout(() => setResponseMessage(''), 2500);
+        });
+
+        newSocket.on('connect_error', () => {
+            setIsConnected(false);
         });
 
         newSocket.on('system_update', (data) => {
@@ -191,6 +225,7 @@ const MainScreen = () => {
 
         return () => {
             newSocket.disconnect();
+            setIsConnected(false);
         };
 
     }, [serverIP]);
@@ -315,21 +350,22 @@ const MainScreen = () => {
             ) : (
                 <>
                     <View style={mainStyles.header}>
-                        <Text style={mainStyles.headerTitle}>DO(DECK)</Text>
+                        <View style={mainStyles.titleContainer}>
+                            <View
+                                style={[
+                                    mainStyles.statusDot,
+                                    { backgroundColor: isConnected ? '#2ecc71' : '#e74c3c' }
+                                ]}
+                            />
+                            <Text style={mainStyles.headerTitle}>DO(DECK)</Text>
+                        </View>
 
                         <View style={mainStyles.headerButtonsContainer}>
                             <TouchableOpacity
                                 style={mainStyles.settingsButton}
                                 onPress={() => router.push('/SettingsScreen')}
                             >
-                                <Text style={mainStyles.settingsButtonText}>Ustawienia</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={mainStyles.qrButton}
-                                onPress={() => router.push('/ScannerScreen')}
-                            >
-                                <Text style={mainStyles.qrButtonText}>📷 Skanuj QR</Text>
+                                <Text style={mainStyles.settingsButtonText}>⚙️ Ustawienia</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -374,9 +410,11 @@ const MainScreen = () => {
                         })}
                     </View>
 
-                    <View style={mainStyles.footer}>
-                        <Text style={mainStyles.response}>{responseMessage}</Text>
-                    </View>
+                    {responseMessage ? (
+                        <View style={mainStyles.toastContainer} pointerEvents="none">
+                            <Text style={mainStyles.toastText}>{responseMessage}</Text>
+                        </View>
+                    ) : null}
                 </>
             )}
         </SafeAreaView>
