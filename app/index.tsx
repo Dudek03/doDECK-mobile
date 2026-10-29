@@ -303,14 +303,15 @@ const MainScreen = () => {
         }
     };
 
-    const setAppVolume = async (name, newVolume) => {
+    const setAppVolume = (name, newVolume) => {
         try {
-            await socket.emit(`set_audio_volume`, {
+            if (!socket) return;
+            socket.emit('set_audio_volume', {
                 app: name,
                 volume: newVolume
-            })
+            });
         } catch (error) {
-            console.error('Błąd zmiany głośności dla', name, error)
+            console.error('Błąd zmiany głośności dla', name, error);
         }
     }
 
