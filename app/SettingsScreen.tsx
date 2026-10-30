@@ -30,6 +30,7 @@ export default function SettingsScreen() {
     const [loadingLayouts, setLoadingLayouts] = useState(false);
     const [showManual, setShowManual] = useState(false);
     const [manualIpInput, setManualIpInput] = useState('');
+    const [manualSecretInput, setManualSecretInput] = useState('');
 
     const loadSettings = async () => {
         try {
@@ -41,6 +42,7 @@ export default function SettingsScreen() {
             if (savedIp) {
                 setIp(savedIp);
                 setManualIpInput(savedIp);
+                if (savedSecret) setManualSecretInput(savedSecret);
             }
             setHasSecret(Boolean(savedSecret));
 
@@ -125,13 +127,18 @@ export default function SettingsScreen() {
         );
     };
 
-    const handleSaveManualIp = async () => {
+    const handleSaveManualConfig = async () => {
         const cleanedIp = manualIpInput.trim();
         if (!cleanedIp) {
             Alert.alert('Błąd', 'Podaj poprawny adres IP serwera.');
             return;
         }
+        const cleanedSecret = manualSecretInput.trim();
         await AsyncStorage.setItem('serverIP', cleanedIp);
+        if (cleanedSecret) {
+            await AsyncStorage.setItem('SECRET_KEY', cleanedSecret);
+            setHasSecret(true);
+        }
         setIp(cleanedIp);
         Alert.alert('Zapisano', `Zapisano adres IP: ${cleanedIp}`);
         fetchFreshLayouts(cleanedIp, activeLayoutId);
@@ -274,11 +281,20 @@ export default function SettingsScreen() {
                                 autoCapitalize="none"
                                 keyboardType="numeric"
                             />
+                            <Text style={styles.manualLabel}>Klucz autoryzacji (Secret):</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Wklej 64-znakowy klucz z okna parowania"
+                                placeholderTextColor="#666"
+                                value={manualSecretInput}
+                                onChangeText={setManualSecretInput}
+                                autoCapitalize="none"
+                            />
                             <TouchableOpacity
                                 style={styles.saveManualButton}
-                                onPress={handleSaveManualIp}
+                                onPress={handleSaveManualConfig}
                             >
-                                <Text style={styles.saveManualButtonText}>Zapisz adres IP</Text>
+                                <Text style={styles.saveManualButtonText}>Zapisz konfigurację</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -496,6 +512,13 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 6,
         alignItems: 'center',
+    },
+    manualLabel: {
+        color: '#bbb',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        marginTop: 6,
     },
     saveManualButtonText: {
         color: '#fff',
