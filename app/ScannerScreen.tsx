@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Button, TouchableOpacity } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -11,6 +11,34 @@ export default function ScannerScreen() {
     const [scanned, setScanned] = useState(false);
     const [torch, setTorch] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        let sub: any;
+        try {
+            sub = CameraView.onModernBarcodeScanned((event) => {
+                if (event && event.data) {
+                    handleBarCodeScanned({ data: event.data });
+                }
+            });
+        } catch (_) {}
+        return () => {
+            if (sub && typeof sub.remove === 'function') {
+                sub.remove();
+            }
+        };
+    }, []);
+
+    const handleLaunchNativeScanner = async () => {
+        try {
+            if (CameraView.isModernBarcodeScannerAvailable) {
+                await CameraView.launchScanner({ barcodeTypes: ['qr'] });
+            } else {
+                alert('Natywny skaner Google Play Services nie jest dostępny na tym urządzeniu.');
+            }
+        } catch (err: any) {
+            console.log('Launch scanner error:', err);
+        }
+    };
 
     if (!permission) return <View style={styles.container} />;
     if (!permission.granted) {
@@ -118,12 +146,25 @@ export default function ScannerScreen() {
             {/* Pasek nawigacyjny na dole */}
             <View style={styles.overlay}>
                 <Text style={styles.overlayText}>Skieruj aparat na kod QR z okna parowania PC</Text>
+
+                {CameraView.isModernBarcodeScannerAvailable && (
+                    <TouchableOpacity
+                        style={styles.googleScannerButton}
+                        onPress={handleLaunchNativeScanner}
+                    >
+                        <Text style={styles.googleScannerButtonText}>🔍 Otwórz Skaner Google (Zalecane)</Text>
+                    </TouchableOpacity>
+                )}
+
                 <View style={styles.buttonRow}>
                     <TouchableOpacity
                         style={[styles.torchButton, torch && styles.torchButtonActive]}
                         onPress={() => setTorch((prev) => !prev)}
                     >
-                        <Text style={styles.torchButtonText}>{torch ? '🔦 Wyłącz latarkę' : '🔦 Włącz latarkę'}</Text>
+                        <Text style={styles.torchButtonText}>{torch ? '🔦 Wyłącz latarkę' : '🔦 Latarka'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.manualButton} onPress={() => router.back()}>
+                        <Text style={styles.manualButtonText}>⌨️ Wpisz ręcznie</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
                         <Text style={styles.cancelButtonText}>✕ Anuluj</Text>
@@ -195,6 +236,34 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         paddingHorizontal: 16,
         borderRadius: 8,
+    },
+    googleScannerButton: {
+        backgroundColor: '#2563eb',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginBottom: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 3,
+        elevation: 3,
+    },
+    googleScannerButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    manualButton: {
+        backgroundColor: '#475569',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+    },
+    manualButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
     cancelButton: {
         backgroundColor: '#e74c3c',

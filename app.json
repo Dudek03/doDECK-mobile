@@ -45,6 +45,7 @@
         }
       ],
       "./plugins/withMlKitMetadata",
+      "./plugins/withProguardRules",
       "expo-web-browser",
       "expo-font",
       "expo-status-bar"
