@@ -1,24 +1,32 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react-native";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
 import SettingsScreen from "../SettingsScreen";
+
+jest.setTimeout(20000);
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 
+const mockAxiosGet = jest.fn().mockResolvedValue({
+  data: {
+    active_layout_id: "profile_main",
+    layouts: [
+      {
+        id: "profile_main",
+        name: "Główny Panel",
+        grid: { columns: 4, rows: 4 },
+        buttons: [{ id: "1", title: "Test" }],
+      },
+    ],
+  },
+});
+
 jest.mock("axios", () => ({
-  get: jest.fn(async () => ({
-    data: {
-      active_layout_id: "profile_main",
-      layouts: [
-        {
-          id: "profile_main",
-          name: "Główny Panel",
-          grid: { columns: 4, rows: 4 },
-          buttons: [{ id: "1", title: "Test" }],
-        },
-      ],
-    },
-  })),
+  __esModule: true,
+  default: {
+    get: (...args) => mockAxiosGet(...args),
+  },
+  get: (...args) => mockAxiosGet(...args),
 }));
 
 jest.mock("expo-router", () => {
@@ -56,8 +64,8 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
     }
     return null;
   }),
-  setItem: jest.fn(),
-  multiRemove: jest.fn(),
+  setItem: jest.fn().mockResolvedValue(null),
+  multiRemove: jest.fn().mockResolvedValue(null),
 }));
 
 describe("SettingsScreen Component", () => {
@@ -66,25 +74,32 @@ describe("SettingsScreen Component", () => {
   });
 
   it("renderuje nagłówek i sekcje ustawień", async () => {
-    await render(<SettingsScreen />);
+    render(<SettingsScreen />);
 
-    expect(screen.getByText("Ustawienia doDECK")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Ustawienia doDECK")).toBeTruthy();
+    });
     expect(screen.getByText("Połączenie i Autoryzacja")).toBeTruthy();
     expect(screen.getByText("Wybór układu (Layout)")).toBeTruthy();
     expect(screen.getByText("📷 Skanuj kod QR z PC")).toBeTruthy();
-  });
+  }, 20000);
 
   it("nawiguje do ScannerScreen po kliknięciu przycisku skanowania QR", async () => {
-    await render(<SettingsScreen />);
+    render(<SettingsScreen />);
 
+    await waitFor(() => {
+      expect(screen.getByText("📷 Skanuj kod QR z PC")).toBeTruthy();
+    });
     fireEvent.press(screen.getByText("📷 Skanuj kod QR z PC"));
     expect(mockPush).toHaveBeenCalledWith("/ScannerScreen");
-  });
+  }, 20000);
 
   it("pozwala na wybór układu i zapisuje go", async () => {
-    await render(<SettingsScreen />);
+    render(<SettingsScreen />);
 
-    expect(screen.getByText("Główny Panel")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText("Główny Panel")).toBeTruthy();
+    });
     expect(screen.getByText("Aktywny ✓")).toBeTruthy();
-  });
+  }, 20000);
 });

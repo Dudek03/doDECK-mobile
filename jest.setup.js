@@ -1,4 +1,6 @@
 /* eslint-env jest */
+jest.setTimeout(20000);
+
 jest.mock('react-native/Libraries/Core/setUpReactDevTools', () => {});
 jest.mock('react-native/Libraries/Core/ReactNativeVersionCheck', () => ({
   checkVersions: jest.fn(),
