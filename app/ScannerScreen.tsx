@@ -9,6 +9,7 @@ const BARCODE_SETTINGS = { barcodeTypes: ['qr' as const] };
 export default function ScannerScreen() {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
+    const [torch, setTorch] = useState(false);
     const router = useRouter();
 
     if (!permission) return <View style={styles.container} />;
@@ -53,6 +54,22 @@ export default function ScannerScreen() {
             }
         } catch (_) {}
 
+        // 3. Format compact: dodeck://192.168.1.100#secret lub dodeck://192.168.1.100?secret=...
+        try {
+            if (trimmed.startsWith('dodeck://')) {
+                const rest = trimmed.replace('dodeck://', '');
+                if (rest.includes('#')) {
+                    const [ipPart, sec] = rest.split('#');
+                    const ip = ipPart.split(':')[0].trim();
+                    if (ip && sec) return { ip, secret: sec.trim() };
+                }
+                const match = rest.match(/^([^:/]+)(?::\d+)?\?.*secret=([a-fA-F0-9]+)/);
+                if (match) {
+                    return { ip: match[1].trim(), secret: match[2].trim() };
+                }
+            }
+        } catch (_) {}
+
         return null;
     };
 
@@ -82,6 +99,8 @@ export default function ScannerScreen() {
             <CameraView
                 style={StyleSheet.absoluteFill}
                 facing="back"
+                autofocus="on"
+                enableTorch={torch}
                 onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
                 barcodeScannerSettings={BARCODE_SETTINGS}
             />
@@ -99,9 +118,17 @@ export default function ScannerScreen() {
             {/* Pasek nawigacyjny na dole */}
             <View style={styles.overlay}>
                 <Text style={styles.overlayText}>Skieruj aparat na kod QR z okna parowania PC</Text>
-                <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-                    <Text style={styles.cancelButtonText}>✕ Anuluj</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={[styles.torchButton, torch && styles.torchButtonActive]}
+                        onPress={() => setTorch((prev) => !prev)}
+                    >
+                        <Text style={styles.torchButtonText}>{torch ? '🔦 Wyłącz latarkę' : '🔦 Włącz latarkę'}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+                        <Text style={styles.cancelButtonText}>✕ Anuluj</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
@@ -172,12 +199,34 @@ const styles = StyleSheet.create({
     cancelButton: {
         backgroundColor: '#e74c3c',
         paddingVertical: 8,
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
         borderRadius: 8,
     },
     cancelButtonText: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 15,
+        fontSize: 14,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'center',
+    },
+    torchButton: {
+        backgroundColor: '#334155',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#475569',
+    },
+    torchButtonActive: {
+        backgroundColor: '#f59e0b',
+        borderColor: '#d97706',
+    },
+    torchButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 });

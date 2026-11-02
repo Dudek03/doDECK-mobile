@@ -12,3 +12,9 @@
 -keep class com.facebook.react.turbomodule.** { *; }
 
 # Add any project specific keep options here:
+
+# Google ML Kit Barcode Scanning & Expo Camera
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.vision.** { *; }
+-keep class expo.modules.camera.** { *; }
+-dontwarn com.google.mlkit.**
