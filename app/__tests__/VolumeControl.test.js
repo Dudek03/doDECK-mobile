@@ -4,13 +4,17 @@ import VolumeControl from "../components/VolumeControl";
 
 describe("VolumeControl Component", () => {
   const mockAppsVolume = {
+    apps: [
+      { App: "Spotify.exe", Volume: 50 },
+      { App: "Discord.exe", Volume: 80 },
+    ],
     aplikacje: [
       { App: "Spotify.exe", Volume: 50 },
       { App: "Discord.exe", Volume: 80 },
     ],
   };
 
-  it("poprawnie renderuje listę aplikacji z ich głośnościami", async () => {
+  it("renders list of applications and volume levels", async () => {
     await render(
       <VolumeControl
         appsVolume={mockAppsVolume}
@@ -19,13 +23,14 @@ describe("VolumeControl Component", () => {
       />,
     );
 
+    expect(screen.getByText("AUDIO MIXER")).toBeTruthy();
     expect(screen.getByText("Spotify.exe")).toBeTruthy();
     expect(screen.getByText("50%")).toBeTruthy();
     expect(screen.getByText("Discord.exe")).toBeTruthy();
     expect(screen.getByText("80%")).toBeTruthy();
   });
 
-  it("wywołuje closeFunction po wciśnięciu przycisku ZAMKNIJ", async () => {
+  it("calls closeFunction when CLOSE button is pressed", async () => {
     const mockClose = jest.fn();
     await render(
       <VolumeControl
@@ -35,7 +40,7 @@ describe("VolumeControl Component", () => {
       />,
     );
 
-    fireEvent.press(screen.getByText("ZAMKNIJ"));
+    fireEvent.press(screen.getByText("CLOSE"));
     expect(mockClose).toHaveBeenCalledTimes(1);
   });
 });

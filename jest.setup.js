@@ -1,11 +1,27 @@
 /* eslint-env jest */
 jest.setTimeout(20000);
 
+// Wyciszenie wewnętrznych ostrzeżeń developerskich React Native / DevTools w środowisku Jest
 jest.mock('react-native/Libraries/Core/setUpReactDevTools', () => {});
+jest.mock('react-native/Libraries/Core/setUpDeveloperTools', () => {});
+jest.mock('react-native/Libraries/Core/setUpReactRefresh', () => {});
 jest.mock('react-native/Libraries/Core/ReactNativeVersionCheck', () => ({
   checkVersions: jest.fn(),
 }));
 jest.mock('react-native/Libraries/Core/checkNativeVersion', () => ({}));
+
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  const msg = typeof args[0] === 'string' ? args[0] : '';
+  if (
+    msg.includes('NativeEventEmitter') ||
+    msg.includes('React DevTools') ||
+    msg.includes('Fast Refresh')
+  ) {
+    return;
+  }
+  originalWarn(...args);
+};
 
 jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => {
   const actual = jest.requireActual('react-native/Libraries/TurboModule/TurboModuleRegistry');

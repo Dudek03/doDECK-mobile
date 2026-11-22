@@ -13,13 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useFocusEffect } from 'expo-router';
 import axios from 'axios';
-
-interface LayoutItem {
-    id: string;
-    name: string;
-    grid?: { columns: number; rows: number };
-    buttons?: any[];
-}
+import type { LayoutItem } from './types';
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -67,7 +61,7 @@ export default function SettingsScreen() {
                 fetchFreshLayouts(savedIp, savedActiveId);
             }
         } catch (error) {
-            console.error('Błąd wczytywania ustawień:', error);
+            console.error('Error loading settings:', error);
         }
     };
 
@@ -85,7 +79,7 @@ export default function SettingsScreen() {
                 }
             }
         } catch (err) {
-            console.log('Nie udało się pobrać najnowszych układów:', err);
+            console.log('Failed to fetch latest layouts:', err);
         } finally {
             setLoadingLayouts(false);
         }
@@ -102,18 +96,18 @@ export default function SettingsScreen() {
             setActiveLayoutId(layoutId);
             await AsyncStorage.setItem('activeLayoutId', layoutId);
         } catch (e) {
-            console.error('Błąd zapisu wybranego układu:', e);
+            console.error('Error saving selected layout:', e);
         }
     };
 
     const handleDisconnect = async () => {
         Alert.alert(
-            'Odłącz urządzenie',
-            'Czy na pewno chcesz usunąć powiązanie z serwerem PC?',
+            'Disconnect Device',
+            'Are you sure you want to remove the connection to the PC server?',
             [
-                { text: 'Anuluj', style: 'cancel' },
+                { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Odłącz',
+                    text: 'Disconnect',
                     style: 'destructive',
                     onPress: async () => {
                         await AsyncStorage.multiRemove(['serverIP', 'SECRET_KEY', 'activeLayoutId', 'cachedLayout']);
@@ -130,7 +124,7 @@ export default function SettingsScreen() {
     const handleSaveManualConfig = async () => {
         const cleanedIp = manualIpInput.trim();
         if (!cleanedIp) {
-            Alert.alert('Błąd', 'Podaj poprawny adres IP serwera.');
+            Alert.alert('Error', 'Please enter a valid server IP address.');
             return;
         }
         const cleanedSecret = manualSecretInput.trim();
@@ -140,7 +134,7 @@ export default function SettingsScreen() {
             setHasSecret(true);
         }
         setIp(cleanedIp);
-        Alert.alert('Zapisano', `Zapisano adres IP: ${cleanedIp}`);
+        Alert.alert('Saved', `Saved IP address: ${cleanedIp}`);
         fetchFreshLayouts(cleanedIp, activeLayoutId);
     };
 
@@ -148,20 +142,20 @@ export default function SettingsScreen() {
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Text style={styles.backButtonText}>⬅ Wróć</Text>
+                    <Text style={styles.backButtonText}>⬅ Back</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Ustawienia doDECK</Text>
+                <Text style={styles.headerTitle}>doDECK Settings</Text>
                 <View style={{ width: 60 }} />
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* SEKCJA 1: POŁĄCZENIE I PAROWANIE */}
+                {/* SECTION 1: CONNECTION & AUTHORIZATION */}
                 <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>Połączenie i Autoryzacja</Text>
+                    <Text style={styles.sectionTitle}>Connection & Authorization</Text>
 
                     <View style={styles.statusRow}>
-                        <Text style={styles.label}>Serwer PC:</Text>
-                        <Text style={styles.valueText}>{ip || 'Nie skonfigurowano'}</Text>
+                        <Text style={styles.label}>PC Server:</Text>
+                        <Text style={styles.valueText}>{ip || 'Not configured'}</Text>
                     </View>
 
                     <View style={styles.statusRow}>
@@ -179,7 +173,7 @@ export default function SettingsScreen() {
                                     { color: hasSecret && ip ? '#2ecc71' : '#e74c3c' },
                                 ]}
                             >
-                                {hasSecret && ip ? 'Sparowano (HMAC aktywny)' : 'Brak autoryzacji'}
+                                {hasSecret && ip ? 'Paired (HMAC active)' : 'Unauthorized'}
                             </Text>
                         </View>
                     </View>
@@ -189,7 +183,7 @@ export default function SettingsScreen() {
                             style={styles.qrButton}
                             onPress={() => router.push('/ScannerScreen')}
                         >
-                            <Text style={styles.qrButtonText}>📷 Skanuj kod QR z PC</Text>
+                            <Text style={styles.qrButtonText}>📷 Scan QR Code from PC</Text>
                         </TouchableOpacity>
 
                         {Boolean(ip || hasSecret) && (
@@ -197,24 +191,24 @@ export default function SettingsScreen() {
                                 style={styles.disconnectButton}
                                 onPress={handleDisconnect}
                             >
-                                <Text style={styles.disconnectButtonText}>Odłącz</Text>
+                                <Text style={styles.disconnectButtonText}>Disconnect</Text>
                             </TouchableOpacity>
                         )}
                     </View>
                 </View>
 
-                {/* SEKCJA 2: WYBÓR UKŁADU (LAYOUT) */}
+                {/* SECTION 2: LAYOUT SELECTION */}
                 <View style={styles.card}>
                     <View style={styles.cardHeaderRow}>
-                        <Text style={styles.sectionTitle}>Wybór układu (Layout)</Text>
+                        <Text style={styles.sectionTitle}>Layout Selection</Text>
                         {loadingLayouts && <ActivityIndicator size="small" color="#2ecc71" />}
                     </View>
 
                     {layouts.length === 0 ? (
                         <Text style={styles.emptyText}>
                             {ip
-                                ? 'Brak wczytanych układów z serwera. Sprawdź połączenie z PC.'
-                                : 'Zeskanuj kod QR, aby pobrać dostępne układy przycisków.'}
+                                ? 'No layouts loaded from server. Check PC connection.'
+                                : 'Scan QR code to load available button layouts.'}
                         </Text>
                     ) : (
                         <View style={styles.layoutList}>
@@ -242,12 +236,12 @@ export default function SettingsScreen() {
                                                 {layout.name || layout.id}
                                             </Text>
                                             <Text style={styles.layoutMeta}>
-                                                Siatka {cols}x{rows} • {layout.buttons?.length || 0} kafelków
+                                                Grid {cols}x{rows} • {layout.buttons?.length || 0} tiles
                                             </Text>
                                         </View>
                                         {isSelected && (
                                             <View style={styles.selectedBadge}>
-                                                <Text style={styles.selectedBadgeText}>Aktywny ✓</Text>
+                                                <Text style={styles.selectedBadgeText}>Active ✓</Text>
                                             </View>
                                         )}
                                     </TouchableOpacity>
@@ -257,20 +251,20 @@ export default function SettingsScreen() {
                     )}
                 </View>
 
-                {/* SEKCJA 3: ZAAWANSOWANE / AWARYJNE RĘCZNE IP */}
+                {/* SECTION 3: ADVANCED / MANUAL IP */}
                 <View style={styles.card}>
                     <TouchableOpacity
                         style={styles.accordionHeader}
                         onPress={() => setShowManual(!showManual)}
                     >
-                        <Text style={styles.accordionTitle}>Opcje zaawansowane (ręczne IP)</Text>
+                        <Text style={styles.accordionTitle}>Advanced Options (Manual IP)</Text>
                         <Text style={styles.accordionIcon}>{showManual ? '▲' : '▼'}</Text>
                     </TouchableOpacity>
 
                     {showManual && (
                         <View style={styles.manualContainer}>
                             <Text style={styles.manualDesc}>
-                                Jeśli kamera nie działa, możesz ręcznie wprowadzić adres IP serwera PC w sieci Wi-Fi:
+                                If camera does not work, you can manually enter the PC server IP address on your Wi-Fi network:
                             </Text>
                             <TextInput
                                 style={styles.input}
@@ -281,10 +275,10 @@ export default function SettingsScreen() {
                                 autoCapitalize="none"
                                 keyboardType="numeric"
                             />
-                            <Text style={styles.manualLabel}>Klucz autoryzacji (Secret):</Text>
+                            <Text style={styles.manualLabel}>Authorization Key (Secret):</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Wklej 64-znakowy klucz z okna parowania"
+                                placeholder="Paste 64-character key from pairing window"
                                 placeholderTextColor="#666"
                                 value={manualSecretInput}
                                 onChangeText={setManualSecretInput}
@@ -294,7 +288,7 @@ export default function SettingsScreen() {
                                 style={styles.saveManualButton}
                                 onPress={handleSaveManualConfig}
                             >
-                                <Text style={styles.saveManualButtonText}>Zapisz konfigurację</Text>
+                                <Text style={styles.saveManualButtonText}>Save Configuration</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -350,21 +344,24 @@ const styles = StyleSheet.create({
     },
     cardHeaderRow: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: 12,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: 'bold',
         color: '#fff',
         marginBottom: 12,
+        letterSpacing: 0.5,
     },
     statusRow: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 6,
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#222',
     },
     label: {
         fontSize: 14,
@@ -372,8 +369,8 @@ const styles = StyleSheet.create({
     },
     valueText: {
         fontSize: 14,
-        color: '#eee',
-        fontWeight: '600',
+        color: '#fff',
+        fontFamily: 'monospace',
     },
     badgeContainer: {
         flexDirection: 'row',
@@ -387,42 +384,39 @@ const styles = StyleSheet.create({
     },
     badgeText: {
         fontSize: 13,
-        fontWeight: '600',
+        fontWeight: 'bold',
     },
     actionButtonsRow: {
         flexDirection: 'row',
-        gap: 12,
-        marginTop: 14,
+        gap: 10,
+        marginTop: 16,
     },
     qrButton: {
         flex: 1,
         backgroundColor: '#2ecc71',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
+        paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
-        justifyContent: 'center',
     },
     qrButtonText: {
-        color: '#fff',
-        fontSize: 14,
+        color: '#000',
         fontWeight: 'bold',
+        fontSize: 14,
     },
     disconnectButton: {
         backgroundColor: '#e74c3c',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderRadius: 8,
         alignItems: 'center',
-        justifyContent: 'center',
     },
     disconnectButtonText: {
         color: '#fff',
+        fontWeight: 'bold',
         fontSize: 14,
-        fontWeight: '600',
     },
     emptyText: {
-        color: '#777',
+        color: '#666',
         fontSize: 13,
         fontStyle: 'italic',
         lineHeight: 18,
@@ -432,9 +426,9 @@ const styles = StyleSheet.create({
     },
     layoutItem: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#242424',
+        alignItems: 'center',
+        backgroundColor: '#222',
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
@@ -442,23 +436,23 @@ const styles = StyleSheet.create({
     },
     layoutItemSelected: {
         borderColor: '#2ecc71',
-        backgroundColor: '#1b2d22',
+        backgroundColor: '#1a2e22',
     },
     layoutInfo: {
         flex: 1,
     },
     layoutName: {
-        color: '#eee',
         fontSize: 15,
-        fontWeight: '600',
+        fontWeight: 'bold',
+        color: '#ddd',
+        marginBottom: 2,
     },
     layoutNameSelected: {
         color: '#2ecc71',
     },
     layoutMeta: {
-        color: '#777',
         fontSize: 12,
-        marginTop: 2,
+        color: '#777',
     },
     selectedBadge: {
         backgroundColor: '#2ecc71',
@@ -477,52 +471,52 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     accordionTitle: {
-        color: '#aaa',
         fontSize: 14,
         fontWeight: '600',
+        color: '#888',
     },
     accordionIcon: {
-        color: '#aaa',
         fontSize: 12,
+        color: '#888',
     },
     manualContainer: {
-        marginTop: 12,
-        paddingTop: 12,
+        marginTop: 14,
         borderTopWidth: 1,
-        borderTopColor: '#282828',
+        borderTopColor: '#252525',
+        paddingTop: 12,
+        gap: 8,
     },
     manualDesc: {
-        color: '#777',
         fontSize: 12,
-        marginBottom: 8,
+        color: '#777',
         lineHeight: 16,
     },
+    manualLabel: {
+        fontSize: 12,
+        color: '#aaa',
+        marginTop: 4,
+    },
     input: {
-        backgroundColor: '#121212',
+        backgroundColor: '#111',
         borderWidth: 1,
         borderColor: '#333',
         borderRadius: 6,
-        padding: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         color: '#fff',
-        fontSize: 14,
-        marginBottom: 10,
+        fontSize: 13,
+        fontFamily: 'monospace',
     },
     saveManualButton: {
-        backgroundColor: '#007BFF',
-        paddingVertical: 8,
+        backgroundColor: '#3498db',
+        paddingVertical: 10,
         borderRadius: 6,
         alignItems: 'center',
-    },
-    manualLabel: {
-        color: '#bbb',
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginBottom: 4,
         marginTop: 6,
     },
     saveManualButtonText: {
         color: '#fff',
+        fontWeight: 'bold',
         fontSize: 13,
-        fontWeight: '600',
     },
 });

@@ -1,0 +1,35 @@
+diff --git a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
+index a676d64..45eeeda 100644
+--- a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
++++ b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
+@@ -130,7 +130,7 @@ class ExpoCameraView(
+   private var imageAnalysisUseCase: ImageAnalysis? = null
+   private var barcodeAnalyzer: BarcodeAnalyzer? = null
+   private var recorder: Recorder? = null
+-  private var barcodeFormats: List<BarcodeType> = emptyList()
++  private var barcodeFormats: List<BarcodeType> = listOf(BarcodeType.QR)
+   private var glSurfaceTexture: SurfaceTexture? = null
+   private var isRecording = false
+ 
+@@ -726,7 +726,7 @@ class ExpoCameraView(
+   }
+ 
+   fun setBarcodeScannerSettings(settings: BarcodeSettings?) {
+-    barcodeFormats = settings?.barcodeTypes ?: emptyList()
++    barcodeFormats = settings?.barcodeTypes ?: listOf(BarcodeType.QR)
+   }
+ 
+   private fun transformBarcodeScannerResultToViewCoordinates(barcode: BarCodeScannerResult) {
+diff --git a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt
+index bbe51c0..fcc1ad2 100644
+--- a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt
++++ b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/analyzers/BarcodeAnalyzer.kt
+@@ -112,7 +112,7 @@ fun Array<ImageProxy.PlaneProxy>.toByteArray(): ByteArray {
+ 
+ private fun barcodeFormats(formats: List<BarcodeType>): Int =
+   if (formats.isEmpty()) {
+-    0
++    com.google.mlkit.vision.barcode.common.Barcode.FORMAT_ALL_FORMATS
+   } else {
+     formats.map { it.mapToBarcode() }.reduce { acc, it ->
+       acc or it

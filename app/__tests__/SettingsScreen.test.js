@@ -14,7 +14,7 @@ jest.mock("axios", () => ({
       layouts: [
         {
           id: "profile_main",
-          name: "Główny Panel",
+          name: "Main Panel",
           grid: { columns: 4, rows: 4 },
           buttons: [{ id: "1", title: "Test" }],
         },
@@ -49,7 +49,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
         layouts: [
           {
             id: "profile_main",
-            name: "Główny Panel",
+            name: "Main Panel",
             grid: { columns: 4, rows: 4 },
             buttons: [{ id: "1", title: "Test" }],
           },
@@ -67,26 +67,26 @@ describe("SettingsScreen Component", () => {
     jest.clearAllMocks();
   });
 
-  it("renderuje nagłówek i sekcje ustawień", async () => {
+  it("renders header and settings sections", async () => {
     await render(<SettingsScreen />);
 
-    expect(screen.getByText("Ustawienia doDECK")).toBeTruthy();
-    expect(screen.getByText("Połączenie i Autoryzacja")).toBeTruthy();
-    expect(screen.getByText("Wybór układu (Layout)")).toBeTruthy();
-    expect(screen.getByText("📷 Skanuj kod QR z PC")).toBeTruthy();
+    expect(screen.getByText("doDECK Settings")).toBeTruthy();
+    expect(screen.getByText("Connection & Authorization")).toBeTruthy();
+    expect(screen.getByText("Layout Selection")).toBeTruthy();
+    expect(screen.getByText("📷 Scan QR Code from PC")).toBeTruthy();
   });
 
-  it("nawiguje do ScannerScreen po kliknięciu przycisku skanowania QR", async () => {
+  it("navigates to ScannerScreen on pressing QR scan button", async () => {
     await render(<SettingsScreen />);
 
-    fireEvent.press(screen.getByText("📷 Skanuj kod QR z PC"));
+    fireEvent.press(screen.getByText("📷 Scan QR Code from PC"));
     expect(mockPush).toHaveBeenCalledWith("/ScannerScreen");
   });
 
-  it("pozwala na wybór układu i zapisuje go", async () => {
+  it("allows selecting a layout and marks it active", async () => {
     await render(<SettingsScreen />);
 
-    expect(screen.getByText("Główny Panel")).toBeTruthy();
-    expect(screen.getByText("Aktywny ✓")).toBeTruthy();
+    expect(screen.getByText("Main Panel")).toBeTruthy();
+    expect(screen.getByText("Active ✓")).toBeTruthy();
   });
 });
