@@ -12,6 +12,11 @@ module.exports = function withMlKitMetadata(config) {
     const mainApplication = androidManifest.application?.[0];
 
     if (mainApplication) {
+      if (!mainApplication.$) {
+        mainApplication.$ = {};
+      }
+      mainApplication.$["android:usesCleartextTraffic"] = "true";
+
       if (!mainApplication["meta-data"]) {
         mainApplication["meta-data"] = [];
       }

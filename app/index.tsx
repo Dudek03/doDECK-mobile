@@ -187,12 +187,16 @@ const MainScreen: React.FC = () => {
                 }
             };
             checkAndLoadConfig();
-        }, [])
+
+            if (socket && !socket.connected) {
+                socket.connect();
+            }
+        }, [socket])
     );
 
     const fetchLayoutFromPython = async (ip: string, preferredLayoutId: string | null = null) => {
         try {
-            const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`, { timeout: 3000 });
+            const res = await axios.get(`http://${ip}:5000/dispatcher/get_layout`, { timeout: 4000 });
             if (res.data && res.data.layouts) {
                 setLayoutData(res.data);
                 await AsyncStorage.setItem('cachedLayout', JSON.stringify(res.data));
@@ -212,8 +216,12 @@ const MainScreen: React.FC = () => {
         if (!serverIP) return;
 
         const newSocket = io(`http://${serverIP}:5000`, {
-            transports: ['websocket'],
-            timeout: 5000,
+            transports: ['websocket', 'polling'],
+            timeout: 10000,
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
         });
         setSocket(newSocket);
 
@@ -224,14 +232,14 @@ const MainScreen: React.FC = () => {
             newSocket.emit('subscribe_telemetry');
         });
 
-        newSocket.on('disconnect', () => {
+        newSocket.on('disconnect', (reason) => {
             setIsConnected(false);
-            setResponseMessage('Disconnected from server');
-            setTimeout(() => setResponseMessage(''), 2500);
+            console.log('Socket disconnected:', reason);
         });
 
-        newSocket.on('connect_error', () => {
+        newSocket.on('connect_error', (error) => {
             setIsConnected(false);
+            console.log('Socket connect error:', error?.message || error);
         });
 
         newSocket.on('system_update', (data: HardwareData) => {
@@ -258,8 +266,12 @@ const MainScreen: React.FC = () => {
             return;
         }
 
-        if (!socket) {
-            setResponseMessage('No server connection');
+        if (!socket || !isConnected) {
+            setResponseMessage(`No connection to PC (${serverIP || 'No IP'}). Check Wi-Fi.`);
+            setTimeout(() => setResponseMessage(''), 3000);
+            if (socket && !socket.connected) {
+                socket.connect();
+            }
             return;
         }
 

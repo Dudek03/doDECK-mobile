@@ -17,8 +17,12 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.dudek.streamDeck",
+      "usesCleartextTraffic": true,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE"
       ]
     },
     "web": {
